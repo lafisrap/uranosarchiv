@@ -26,8 +26,9 @@ jobs:
         with:
           # Astro 7 and pdfjs-dist both require Node >=22 — a lower version
           # here causes npm to behave inconsistently with the lock file
-          # (confirmed by a failed CI run during the Phase 1 pilot).
-          node-version: 22
+          # (confirmed by a failed CI run during the Phase 1 pilot). Using
+          # 26 (current at time of writing) to match local dev.
+          node-version: 26
           cache: npm
 
       - name: Install dependencies
