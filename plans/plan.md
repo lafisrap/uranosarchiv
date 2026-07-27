@@ -30,10 +30,9 @@ Sibling repos in this workspace were checked and have **nothing reusable** for t
 ## Prerequisites (not automatable by Claude — user must do these)
 
 1. Create a **public** GitHub repository named `uranosarchiv` (the original name — not the `uranos-archive` working-folder name used locally during planning) and add it as the `origin` remote (none exists yet).
-2. Register a domain containing **"uranosarchive"** (confirmed preference — no hyphen, e.g. `uranosarchive.org`/`.de`/`.com`, whichever is available) and move it to Cloudflare nameservers, then create a Cloudflare account + R2 bucket (e.g. `uranosarchiv-pdfs`) and **connect a subdomain of it to the bucket** (R2 bucket → Settings → Custom Domains) — e.g. `docs.uranosarchive.org` for the public PDF URLs. **Until this domain is registered**, Phase 1 can proceed using R2's default `pub-<hash>.r2.dev` URL for local dev/testing only — just don't treat that URL as the final production one (it's rate-limited, not meant to be permanent); swapping it for the real custom domain later is a one-line env var change (`PUBLIC_R2_BASE_URL`), no code changes needed.
+2. Create a Cloudflare account + R2 bucket (e.g. `uranosarchiv-pdfs`). **No custom domain needed** — public access via R2's default `pub-<hash>.r2.dev` URL is the plan's default for both dev and production (see "Cloudflare R2 integration" below for the tradeoff). A custom domain (would need a `uranosarchive.*` registration moved to Cloudflare nameservers) is an optional later upgrade, swappable via one env var, not a blocker.
 3. In the repo: Settings → Pages → Build and deployment → Source: **"GitHub Actions"** (not "Deploy from a branch").
 4. Generate an R2 API token (Access Key ID/Secret) for the one-time/occasional local migration script — this never runs in CI, so no GitHub secret is needed for it.
-5. (Optional, same domain purchase) If `uranosarchive.*` is also meant to be the **site's own** URL (not just the R2 asset subdomain) rather than the default `<user>.github.io/uranosarchiv`, that's a separate custom-domain-for-GitHub-Pages setup — out of scope for Phase 1 (see "Phase 3 — Explicitly deferred"), but worth deciding now since it's the same domain purchase.
 
 ## Repo structure
 
@@ -92,9 +91,9 @@ uranosarchiv/                          # local working-folder name is currently 
 └── .env.example
 ```
 
-**Routing decision:** category pages live at `/{category-path}/`, document pages live at `/dokument/{category-path}/{documentGroup}/`. A single catch-all trying to disambiguate "is this segment a category or a document" at the same URL depth is unnecessary complexity for v1 — the `/dokument/` prefix keeps the two collections' `getStaticPaths` completely independent.
+**Routing decision:** category pages live at `/{category-path}/`, document pages live at `/dokument/{category-path}/{documentGroup}/` — e.g. `/dokument/nachlaesse/scholl-mathilde/090410-osterfest/`, not a `--`-joined single segment. Since `documentGroup` is only unique *within* its category (not globally), `getStaticPaths` for the document route must key each generated page by the `(categoryPath, documentGroup)` pair together (iterate categories, then that category's logical documents) — the category segments already baked into the URL are what disambiguate two different categories that happen to reuse the same `documentGroup` slug (e.g. two categories each having a subfolder literally named `notizen`). A single catch-all trying to disambiguate "is this segment a category or a document" at the same URL depth is unnecessary complexity for v1 — the `/dokument/` prefix keeps the two collections' `getStaticPaths` completely independent.
 
-Production hero/nav assets are new files under `src/assets/` (processed through `astro:assets` for responsive `<Image>` output) — the recovered JPGs in `reference/design-assets/` stay a mood board, never shipped directly (see §8).
+Production hero/nav assets are new files under `src/assets/` (processed through `astro:assets` for responsive `<Image>` output) — the recovered JPGs in `reference/design-assets/` stay a mood board, never shipped directly (see §8). **Note**: the cropped/processed derivative must be *copied* into `src/assets/` as its own file — `reference/` sits outside `src/`, and Astro's content-collection image helpers resolve relative to files under `src/`, so keeping the production asset physically inside `src/assets/hero/` (rather than importing across from `reference/`) is the reliable path and avoids any ambiguity about what Vite/Astro will and won't resolve at build time.
 
 ## Content collection schemas (Astro 5 content layer)
 
@@ -121,8 +120,8 @@ const documents = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/documents' }),
   schema: z.object({
     title: z.string(),                  // "Osterfest", "Die Mystik", or a lecture title
-    documentGroup: z.string(),          // shared by every page of one logical scan, e.g. "scholl-mathilde--090410-osterfest"
-    category: z.string(),               // leaf category slug this belongs to
+    documentGroup: z.string(),          // shared by every page of one logical scan, e.g. "090410-osterfest" — unique WITHIN its category only (not globally); deliberately has no category prefix baked in, so renaming/reorganizing a category never invalidates existing documentGroup values (see routing note below)
+    category: z.string(),               // leaf category slug this belongs to — this field alone carries the category relationship
     date: z.string().nullable(),        // ISO "1909-04-10", or null if undated
     dateRaw: z.string().optional(),     // original YYMMDD token, for traceability
     dateSuffix: z.string().optional(),  // letter disambiguator: "a" / "b" / "c"
@@ -278,14 +277,26 @@ Why a custom viewer is the right call, specifically for this content:
 - Since each PDF object here is genuinely one page, rendering is just `getDocument(url).promise.then(pdf => pdf.getPage(1)).then(page => page.render(...))` per navigation step — no per-PDF page-count handling needed internally, "page navigation" in the UI means "load the next `r2Key`."
 - Lazy-load: the viewer script + `pdfjs-dist` (+ worker) load only on document detail pages, and only the current page's canvas renders on demand — not all pages upfront, important for groups with 60+ pages.
 
+**Worker path — the trickiest part of this component, test it in Phase 1, not later.** `pdfjs-dist` needs its worker script resolvable as a separate bundled file; under Vite (which Astro uses), the naive `pdfjs.GlobalWorkerOptions.workerSrc = 'pdf.worker.js'` approach frequently fails to resolve at the correct path after build. Configure it explicitly instead:
+```ts
+import * as pdfjs from 'pdfjs-dist';
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
+```
+and verify Vite actually bundles the worker correctly (may need `worker: { format: 'es' }` in `astro.config.mjs`'s `vite` config block). **Build a minimal one-page proof-of-concept of this specific piece before wiring up the full `DocumentViewer` component** — if the worker path breaks, it's much cheaper to discover that in isolation than after the rest of the viewer is built on top of it.
+
+**Touch gestures are not automatic.** `pdfjs-dist`'s core only renders to canvas — it does not provide swipe-to-next-page or pinch-to-zoom out of the box (that's a separate concern from the worker). Budget real implementation time for this in the pilot (e.g. basic `touchstart`/`touchend` delta-X swipe detection for prev/next, and either native CSS `touch-action: pinch-zoom` on the canvas or a small library like `panzoom` for pinch-zoom) — don't assume it comes for free with the rendering setup.
+
 ## Cloudflare R2 integration
 
-- One bucket (e.g. `uranosarchiv-pdfs`); object keys use the **normalized** scheme from the schema above (`<category-slug>/<documentGroup-slug>/<seq>.pdf`), never the raw diacritic-laden legacy filename — keeps R2 keys URL-safe.
-- **Public access via a connected custom domain** (see Prerequisites — not the rate-limited `*.r2.dev` default).
+- One bucket (e.g. `uranosarchiv-pdfs`); object keys use the **normalized** scheme from the schema above (`<category-slug>/<documentGroup>/<seq>.pdf`), never the raw diacritic-laden legacy filename — keeps R2 keys URL-safe.
+- **Public access via R2's default `pub-<hash>.r2.dev` URL — no custom domain required.** Cloudflare's own docs call `r2.dev` "not recommended for production" (stricter/less predictable rate limits, no SLA), but for a niche cultural archive with modest traffic this is a reasonable default rather than a real blocker. A custom domain remains a drop-in later upgrade — swap one env var (`PUBLIC_R2_BASE_URL`), no code changes — if traffic ever outgrows it or the rate limiting becomes noticeable.
 - Astro reads only a public base URL, injected as `PUBLIC_R2_BASE_URL`:
   ```ts
   // src/lib/r2.ts
-  const base = import.meta.env.PUBLIC_R2_BASE_URL; // e.g. "https://docs.example.org"
+  const base = import.meta.env.PUBLIC_R2_BASE_URL; // e.g. "https://pub-xxxxxxxx.r2.dev" (or a custom domain later)
   export function r2Url(key: string): string {
     return `${base}/${key.split('/').map(encodeURIComponent).join('/')}`;
   }
@@ -299,7 +310,7 @@ R2_ACCOUNT_ID=
 R2_ACCESS_KEY_ID=
 R2_SECRET_ACCESS_KEY=
 R2_BUCKET_NAME=uranosarchiv-pdfs
-PUBLIC_R2_BASE_URL=https://docs.example.org
+PUBLIC_R2_BASE_URL=https://pub-xxxxxxxxxxxxxxxx.r2.dev
 ```
 
 ## GitHub Actions workflow (`.github/workflows/pages.yml`)
@@ -334,6 +345,8 @@ jobs:
       - run: npm run build
         env:
           PUBLIC_R2_BASE_URL: ${{ vars.PUBLIC_R2_BASE_URL }}
+      - name: Ensure GitHub Pages skips Jekyll processing
+        run: touch dist/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with: { path: ./dist }
 
@@ -350,6 +363,11 @@ jobs:
 
 - `PUBLIC_R2_BASE_URL` is a repo **Variable** (Settings → Secrets and variables → Actions → Variables), not a Secret — it's a public URL.
 - R2 write credentials are **never** added as GitHub secrets in this plan — no CI step uploads or verifies PDFs.
+- **`.nojekyll` is not optional.** GitHub Pages runs incoming static output through Jekyll by default, and Jekyll silently *ignores* any file or folder starting with an underscore — which is exactly what Astro's hashed-asset output directory is called (`_astro/`). Without `.nojekyll`, the built site would deploy with all its CSS/JS missing, with no obvious build error to explain why. The `touch dist/.nojekyll` step above (or equivalently, an empty `public/.nojekyll` file committed to the repo, which Astro copies into `dist/` automatically) must be in place from the very first deploy.
+
+## SEO: sitemap + robots.txt (pulled into Phase 1, not deferred)
+
+At 1000+ static pages, a generated `sitemap.xml` is worth having from the start rather than bolting on later: `npx astro add sitemap` (installs `@astrojs/sitemap`, wires it into `astro.config.mjs` automatically) — requires `site: 'https://<final-pages-url>'` to be set in the config for it to generate correct absolute URLs. Pair with a simple `public/robots.txt` pointing at the sitemap. Both are a few minutes of setup, so there's no reason to defer this to a later phase.
 
 ## Responsive design
 
@@ -381,9 +399,17 @@ node scripts/migrate-category.mjs \
    - **Subfolder found** (e.g. `090410/`, `Die Mystik/`) → the whole subfolder is one `documentGroup`; files inside are pages, `sequenceIndex` from each file's trailing 3-digit suffix; title/date come from the **folder name**.
    - **Loose top-level file** → check if its stem (after stripping a trailing 3-digit run) matches another top-level file's stem; if so, group them (handles cases like sequential top-level scans without a subfolder); otherwise it's a standalone one-page document.
 3. `parseFilenameOrFolderName(stem)` — regex `^(\d{6})(ff)?([a-z])?[\s-]*(.*)$` extracts `YYMMDD`, optional `ff` continuation marker, optional letter suffix, and remaining title/place text; falls back to `undatiert ...` handling. **Anything that doesn't match either pattern is not guessed at** — recorded with `needsReview: true` in the CSV report, placeholder title = raw stem, `date: null`. The pilot already found one undocumented variant (`...ff-...(Scholl)`), so expect more in other categories.
-4. Two-digit year `yy` → `1900 + yy` (this archive's content is 1900s–1930s); flag (don't crash on) any resulting year outside ~1900–1935 for manual review.
-5. Build `documentGroup` slug (`${categorySlug}--${slugify(dateOrFolderTitle)}`) and `r2Key` (`${categorySlug}/${documentGroupSlug}/${String(sequenceIndex).padStart(3,'0')}.pdf`).
-6. Write one markdown file per physical page (via `gray-matter`'s stringify for clean YAML frontmatter) under the matching `src/content/documents/...` path.
+4. Two-digit year `yy` → `1900 + yy` (this archive's content is 1900s–1930s, but the `Mitteilungen/` Waldorf-school circulars run into 1937). **Hard guard, don't silently trust the arithmetic:**
+   ```js
+   const year = 1900 + yy;
+   if (year < 1880 || year > 1950) {
+     // needsReview: true — don't guess. A typo like "990101" must not
+     // silently become the year 2890, and a real edge-case date must not
+     // be silently dropped either.
+   }
+   ```
+5. Build `documentGroup` as `slugify(dateOrFolderTitle)` — e.g. `090410-osterfest` — **with no category prefix baked in** (the `category` field already carries that relationship; this keeps `documentGroup` stable if a category is later renamed/reorganized). Build `r2Key` as `${categorySlug}/${documentGroup}/${String(sequenceIndex).padStart(3,'0')}.pdf`.
+6. Write one markdown file per physical page (via `gray-matter`'s stringify for clean YAML frontmatter) under the matching `src/content/documents/...` path — **skip-if-exists by default, matching the R2 upload behavior below.** Once content is live, a maintainer may hand-correct a frontmatter field (fix a mis-parsed title, add a missing place name); re-running the migration script must not silently clobber that manual edit. Add a `--regenerate` flag for the deliberate case of wanting a full rebuild of already-migrated markdown (e.g. after a `parse-filename.mjs` bugfix that should retroactively re-parse everything).
 7. If `--upload`: stream each source PDF to R2 (`PutObjectCommand`, `@aws-sdk/client-s3`), `ContentType: application/pdf`, **skip-if-exists by default** (idempotent/resumable — important given the full 4.3GB corpus will take real wall-clock time and may need retries), `--force` to overwrite.
 8. Emit `scripts/migration-reports/<categorySlug>-report.csv` (one row per source file: `originalFilename, legacyFolder, documentGroup, sequenceIndex, date, dateSuffix, isVerbatim, r2Key, needsReview`) — committed (small, no PDFs) as a permanent audit trail and the human checklist before trusting the Phase 2 full-corpus run.
 
@@ -393,15 +419,16 @@ node scripts/migrate-category.mjs \
 - `Nachlässe → Mathilde Scholl` (163 files, has subfolder-grouped multi-page documents — exercises grouping/pagination)
 - `Nachlässe → Johanna und Adalbert von Keyserlingk` (local `Keyserlingk Notizen/`, 50 files, flat — exercises the loose-file/no-subfolder path)
 
-1. Scaffold Astro 5 project at repo root (`npm create astro@latest`), wire in the structure above.
-2. `src/content.config.ts` with both zod schemas.
-3. Author category markdown stubs for the **full** top-nav + Nachlässe sub-nav (all ~17 nav items, so the nav looks complete even with only 2 populated leaf categories) — cheap (~20 tiny files), unblocks nav-tree testing immediately.
-4. Build `nav-tree.ts`/`documents.ts`/`r2.ts`, layouts, `SiteHeader`/`MainNav`/`MobileNav`, `CategoryLayout`/`DocumentLayout`, `DocumentCard`, `DocumentViewer`.
-5. Create the R2 bucket, connect the custom subdomain for public read, generate an API token, populate local `.env`.
-6. Write and run `migrate-category.mjs` against the two pilot legacy folders with `--upload`; review the generated CSV reports for `needsReview` rows before trusting the output.
-7. Responsive hero/banner asset step: crop/process the recovered JPG, sample palette into CSS variables, build the real HTML nav.
-8. Extend `.github/workflows/pages.yml`; flip repo Pages source to "GitHub Actions"; set `PUBLIC_R2_BASE_URL` repo variable.
-9. Push to `main`, verify the Actions run, verify the deployed pilot site end-to-end: nav renders, category listing shows grouped documents (one card per `documentGroup`, not per scan), a multi-page document opens with working page navigation in the pdf.js viewer, mobile viewport (ideally a real device, at least iOS Safari via devtools/BrowserStack) renders correctly and the PDF viewer works there too.
+1. Scaffold Astro 5 project at repo root (`npm create astro@latest`), wire in the structure above; `npx astro add sitemap` immediately, set `site:` in `astro.config.mjs`.
+2. **Build the pdf.js worker proof-of-concept first, in isolation** (a bare page rendering one PDF from R2 via `pdfjs-dist`, with the worker path configured as shown above) — this is the single riskiest technical unknown in the whole plan; confirm it works before investing in the rest of `DocumentViewer`.
+3. `src/content.config.ts` with both zod schemas.
+4. Author category markdown stubs for the **full** top-nav + Nachlässe sub-nav (all ~17 nav items, so the nav looks complete even with only 2 populated leaf categories) — cheap (~20 tiny files), unblocks nav-tree testing immediately.
+5. Build `nav-tree.ts`/`documents.ts`/`r2.ts`, layouts, `SiteHeader`/`MainNav`/`MobileNav`, `CategoryLayout`/`DocumentLayout`, `DocumentCard`, and the full `DocumentViewer` (now building on the proven worker setup from step 2), including basic touch swipe/pinch-zoom handling.
+6. Create the R2 bucket with public `r2.dev` access, generate an API token, populate local `.env`.
+7. Write and run `migrate-category.mjs` against the two pilot legacy folders with `--upload`; review the generated CSV reports for `needsReview` rows before trusting the output.
+8. Responsive hero/banner asset step: crop the recovered JPG, copy the result into `src/assets/hero/`, sample palette into CSS variables, build the real HTML nav.
+9. Extend `.github/workflows/pages.yml` (including the `.nojekyll` step); flip repo Pages source to "GitHub Actions"; set `PUBLIC_R2_BASE_URL` repo variable.
+10. Push to `main`, verify the Actions run, verify the deployed pilot site end-to-end: nav renders, category listing shows grouped documents (one card per `documentGroup`, not per scan), a multi-page document opens with working page navigation in the pdf.js viewer including touch swipe/pinch-zoom, mobile viewport (ideally a real device, at least iOS Safari via devtools/BrowserStack) renders correctly and the PDF viewer works there too.
 
 **Acceptance criterion for Phase 1**: both pilot categories live, navigable, and viewable end-to-end on GitHub Pages, on desktop and mobile, sourcing PDFs from R2.
 
@@ -417,8 +444,17 @@ node scripts/migrate-category.mjs \
 ## Phase 3 — Explicitly deferred (out of scope for this plan)
 
 - OCR pass for full-text search (all PDFs are scans with no text layer per `analysis.md`).
-- A custom domain in front of GitHub Pages itself (separate from the R2 asset domain set up in Phase 1).
+- A custom domain for either the R2 asset URL or the GitHub Pages site itself — both currently run on their free default domains (`r2.dev`, `<user>.github.io/uranosarchiv`); either can be added later purely via config/env-var changes, no re-architecture.
 - Vector/redrawn replacement of the cropped-JPG hero asset.
+
+## Known risks to watch (not blockers, but worth expecting)
+
+| Risk | Assessment |
+|---|---|
+| Build time at 1000+ markdown files | Astro 5's `glob` loader is fast, but `getStaticPaths` generating a page per logical document at full corpus scale (~1035 files) could push CI build time to a couple of minutes. Fine, just don't be surprised. |
+| Filename-parsing complexity | The pilot already turned up one undocumented filename variant beyond what `analysis.md` recorded. Expect `parse-filename.mjs` to need several iterations as Phase 2 works through the remaining ~17 categories — the `needsReview` CSV workflow is exactly the right safety net for this, budget the iteration time rather than expecting the regex to be right on the first pass. |
+| Mobile PDF viewer touch UX | Covered above (§ PDF viewing) — `pdfjs-dist` handles rendering, not gestures; swipe/pinch-zoom is custom work to budget into the Phase 1 pilot, not something that comes for free. |
+| R2 `r2.dev` rate limits | Now the default (see Prerequisites) rather than a custom domain — low risk for this project's expected traffic, but worth an eye on Cloudflare's dashboard after launch in case a traffic spike (e.g. a blog post linking to the archive) hits the limit; the fix is a one-line env var swap to a custom domain, not a re-architecture. |
 
 ## Verification
 
