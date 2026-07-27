@@ -24,7 +24,10 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Astro 7 and pdfjs-dist both require Node >=22 — a lower version
+          # here causes npm to behave inconsistently with the lock file
+          # (confirmed by a failed CI run during the Phase 1 pilot).
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
