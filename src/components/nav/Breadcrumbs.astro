@@ -1,0 +1,65 @@
+---
+import type { NavNode } from '../../lib/nav-tree';
+
+interface Props {
+  trail: NavNode[];
+  /** Optional extra final crumb (e.g. a document title) that isn't itself a NavNode. */
+  current?: string;
+}
+
+const { trail, current } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+	<ol>
+		<li><a href={`${base}/`}>Startseite</a></li>
+		{
+			trail.map((node, i) => (
+				<li>
+					{i === trail.length - 1 && !current ? (
+						<span aria-current="page">{node.title}</span>
+					) : (
+						<a href={`${base}/${node.path}/`}>{node.title}</a>
+					)}
+				</li>
+			))
+		}
+		{current && (
+			<li>
+				<span aria-current="page">{current}</span>
+			</li>
+		)}
+	</ol>
+</nav>
+
+<style>
+	.breadcrumbs ol {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.35rem;
+		list-style: none;
+		margin: 1rem 0;
+		padding: 0;
+		font-size: 0.85rem;
+		color: var(--color-brand-blue-dark);
+	}
+
+	.breadcrumbs li:not(:last-child)::after {
+		content: '/';
+		margin-left: 0.35rem;
+		color: rgba(31, 58, 92, 0.4);
+	}
+
+	.breadcrumbs a {
+		text-decoration: none;
+	}
+
+	.breadcrumbs a:hover {
+		text-decoration: underline;
+	}
+
+	.breadcrumbs [aria-current='page'] {
+		font-weight: 600;
+	}
+</style>

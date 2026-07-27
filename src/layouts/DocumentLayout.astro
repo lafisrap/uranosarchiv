@@ -1,0 +1,79 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Breadcrumbs from '../components/nav/Breadcrumbs.astro';
+import DocumentViewer from '../components/document/DocumentViewer.astro';
+import type { NavNode } from '../lib/nav-tree';
+import type { LogicalDocument } from '../lib/documents';
+
+interface Props {
+  trail: NavNode[];
+  doc: LogicalDocument;
+}
+
+const { trail, doc } = Astro.props;
+
+function formatDate(iso: string | null, suffix?: string): string {
+  if (!iso) return 'undatiert';
+  const [year, month, day] = iso.split('-');
+  const formatted = `${day}.${month}.${year}`;
+  return suffix ? `${formatted}${suffix}` : formatted;
+}
+---
+
+<BaseLayout title={doc.title}>
+	<Breadcrumbs trail={trail} current={doc.title} />
+	<h1>{doc.title}</h1>
+
+	<dl class="document-meta">
+		<div>
+			<dt>Datum</dt>
+			<dd>{formatDate(doc.date, doc.dateSuffix)}</dd>
+		</div>
+		{
+			doc.place && (
+				<div>
+					<dt>Ort</dt>
+					<dd>{doc.place}</dd>
+				</div>
+			)
+		}
+		<div>
+			<dt>Umfang</dt>
+			<dd>{doc.pageCount} {doc.pageCount === 1 ? 'Seite' : 'Seiten'}</dd>
+		</div>
+		{
+			doc.isVerbatim && (
+				<div>
+					<dt>Hinweis</dt>
+					<dd>Wortlaut-Transkription</dd>
+				</div>
+			)
+		}
+	</dl>
+
+	<DocumentViewer pages={doc.pages} title={doc.title} />
+</BaseLayout>
+
+<style>
+	.document-meta {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.5rem;
+		margin: 1rem 0 1.5rem;
+		font-size: 0.9rem;
+	}
+
+	.document-meta dt {
+		font-weight: 600;
+		display: inline;
+	}
+
+	.document-meta dt::after {
+		content: ':';
+	}
+
+	.document-meta dd {
+		display: inline;
+		margin: 0 0 0 0.3rem;
+	}
+</style>

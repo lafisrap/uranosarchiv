@@ -1,0 +1,33 @@
+---
+import DocumentLayout from '../../layouts/DocumentLayout.astro';
+import { flattenNavTree, breadcrumbsFor } from '../../lib/nav-tree';
+import { getDocumentsForCategory } from '../../lib/documents';
+
+export async function getStaticPaths() {
+  const nodes = await flattenNavTree();
+  const paths = [];
+
+  for (const node of nodes) {
+    const documents = await getDocumentsForCategory(node.slug);
+    if (documents.length === 0) continue;
+
+    const trail = await breadcrumbsFor(node.path);
+    for (const doc of documents) {
+      // documentGroup is only unique WITHIN its category (see plans/plan.md,
+      // "Routing decision") — the category path segments in the URL are
+      // what disambiguate two categories that happen to reuse the same
+      // documentGroup slug.
+      paths.push({
+        params: { documentPath: `${node.path}/${doc.documentGroup}` },
+        props: { trail, doc },
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { trail, doc } = Astro.props;
+---
+
+<DocumentLayout trail={trail} doc={doc} />

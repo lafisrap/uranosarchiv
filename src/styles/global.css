@@ -1,0 +1,68 @@
+/*
+  Palette sampled directly from the recovered original watercolor artwork
+  (reference/design-assets/bg_page1_final-version.jpg) — warm gold/yellow
+  against a deep blue, on a cream paper-like ground. See plans/plan.md
+  "Responsive design" for how this was derived (ImageMagick color sampling
+  of a text-free crop, not guessed at).
+*/
+:root {
+  --color-accent-yellow: #e1c437;
+  --color-accent-orange: #d8af34;
+  --color-brand-blue: #3e6094;
+  --color-brand-blue-dark: #1f3a5c;
+  --color-cream: #faf7ee;
+  --color-ink: #241f14;
+
+  --font-display: 'Georgia', 'Iowan Old Style', serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --breakpoint-tablet: 640px;
+  --breakpoint-desktop: 1024px;
+
+  --content-max-width: 72rem;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--color-ink);
+  background: var(--color-cream);
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-brand-blue-dark);
+}
+
+a:hover {
+  color: var(--color-accent-orange);
+}
+
+.content-width {
+  max-width: var(--content-max-width);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .content-width {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .content-width {
+    padding-inline: 2rem;
+  }
+}

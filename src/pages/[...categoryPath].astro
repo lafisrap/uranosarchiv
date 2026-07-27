@@ -1,0 +1,30 @@
+---
+import CategoryLayout from '../layouts/CategoryLayout.astro';
+import { flattenNavTree, breadcrumbsFor } from '../lib/nav-tree';
+import { getDocumentsForCategory } from '../lib/documents';
+
+export async function getStaticPaths() {
+  // "startseite" and "impressum" have their own dedicated static pages
+  // (src/pages/index.astro, src/pages/impressum.astro) — excluded here to
+  // avoid two routes resolving to the same final URL. Defined inside this
+  // function, not at module scope — Astro's getStaticPaths extraction does
+  // not reliably pick up plain top-level frontmatter consts otherwise.
+  const EXCLUDED_SLUGS = new Set(['startseite', 'impressum']);
+  const nodes = (await flattenNavTree()).filter((n) => !EXCLUDED_SLUGS.has(n.slug));
+
+  return await Promise.all(
+    nodes.map(async (node) => {
+      const trail = await breadcrumbsFor(node.path);
+      const documents = await getDocumentsForCategory(node.slug);
+      return {
+        params: { categoryPath: node.path },
+        props: { node, trail, documents },
+      };
+    }),
+  );
+}
+
+const { node, trail, documents } = Astro.props;
+---
+
+<CategoryLayout node={node} trail={trail} documents={documents} />

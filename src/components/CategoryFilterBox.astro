@@ -1,0 +1,72 @@
+---
+interface Props {
+  /** CSS selector for the container whose direct card children get filtered. */
+  targetSelector: string;
+}
+
+const { targetSelector } = Astro.props;
+---
+
+<div class="filter-box">
+	<label for="category-filter">Titel, Datum oder Ort durchsuchen</label>
+	<input
+		type="search"
+		id="category-filter"
+		placeholder="z. B. 1909, Berlin, Osterfest…"
+		data-target={targetSelector}
+	/>
+	<p class="filter-empty" hidden>Keine Treffer.</p>
+</div>
+
+<style>
+	.filter-box {
+		margin-bottom: 1.5rem;
+	}
+
+	.filter-box label {
+		display: block;
+		font-size: 0.85rem;
+		font-weight: 600;
+		margin-bottom: 0.35rem;
+	}
+
+	.filter-box input {
+		width: 100%;
+		max-width: 24rem;
+		padding: 0.5rem 0.75rem;
+		border: 1px solid rgba(62, 96, 148, 0.4);
+		border-radius: 0.35rem;
+		font-size: 1rem;
+	}
+
+	.filter-empty {
+		margin-top: 0.75rem;
+		font-style: italic;
+		color: var(--color-brand-blue-dark);
+	}
+</style>
+
+<script>
+	// Vanilla-JS client-side filter — no server search needed at pilot scale
+	// (see plans/plan.md, "Responsive design" / CategoryFilterBox).
+	document.querySelectorAll<HTMLInputElement>('#category-filter').forEach((input) => {
+		const targetSelector = input.dataset.target;
+		if (!targetSelector) return;
+		const container = document.querySelector(targetSelector);
+		if (!container) return;
+
+		const cards = Array.from(container.querySelectorAll<HTMLElement>('[data-filter-text]'));
+		const emptyMessage = input.closest('.filter-box')?.querySelector<HTMLElement>('.filter-empty');
+
+		input.addEventListener('input', () => {
+			const query = input.value.trim().toLowerCase();
+			let visibleCount = 0;
+			for (const card of cards) {
+				const matches = !query || (card.dataset.filterText ?? '').includes(query);
+				card.hidden = !matches;
+				if (matches) visibleCount++;
+			}
+			if (emptyMessage) emptyMessage.hidden = visibleCount !== 0;
+		});
+	});
+</script>
