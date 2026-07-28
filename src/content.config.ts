@@ -18,10 +18,12 @@ const documents = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/documents' }),
   schema: z.object({
     title: z.string(), // "Osterfest", "Die Mystik", or a lecture title
-    // Shared by every page of one logical scan, e.g. "090410-osterfest".
-    // Unique WITHIN its category only (not globally) — deliberately has no
-    // category prefix baked in, so renaming/reorganizing a category never
-    // invalidates existing documentGroup values.
+    // Slug for this logical document, e.g. "090410-osterfest". Unique WITHIN
+    // its category only (not globally) — deliberately has no category prefix
+    // baked in, so renaming/reorganizing a category never invalidates it.
+    // One markdown file = one documentGroup = one merged PDF (see
+    // scripts/merge-legacy-pdfs.mjs) — multi-page scans are pre-merged into
+    // a single R2 object rather than split across many content files.
     documentGroup: z.string(),
     category: z.string(), // leaf category slug this belongs to
     date: z.string().nullable(), // ISO "1909-04-10", or null if undated
@@ -29,11 +31,10 @@ const documents = defineCollection({
     dateSuffix: z.string().optional(), // letter disambiguator: "a" / "b" / "c"
     isUndated: z.boolean().default(false),
     place: z.string().optional(),
-    sequenceIndex: z.number().default(1), // 1-based page/scan order within documentGroup
-    pageCount: z.number().default(1), // total pages in the group (same value on every page's frontmatter)
-    isVerbatim: z.boolean().default(false), // the legacy "(wb)" flag
-    r2Key: z.string(), // normalized R2 object key, e.g. "scholl-mathilde/090410-osterfest/012.pdf"
-    originalFilename: z.string(), // preserved raw legacy filename, for audit/debugging
+    pageCount: z.number().default(1), // TRUE page count of the merged PDF (see merge-legacy-pdfs.mjs's _page-counts.json — never assumed from source file count)
+    isVerbatim: z.boolean().default(false), // the legacy "(wb)" flag on any constituent source file
+    r2Key: z.string(), // normalized R2 object key for the single merged PDF, e.g. "scholl-mathilde/090410-osterfest.pdf"
+    originalFilenames: z.array(z.string()), // every raw legacy filename merged into this document, for audit/debugging
     legacyFolder: z.string(), // e.g. "Scholl Mathilde/090410", traceability back to legacy/
     order: z.number().default(0), // manual override; default sort is date -> dateSuffix -> title
   }),

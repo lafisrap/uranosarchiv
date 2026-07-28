@@ -18,7 +18,7 @@ export async function getStaticPaths() {
       // what disambiguate two categories that happen to reuse the same
       // documentGroup slug.
       paths.push({
-        params: { documentPath: `${node.path}/${doc.documentGroup}` },
+        params: { documentPath: `${node.path}/${doc.data.documentGroup}` },
         props: { trail, doc },
       });
     }

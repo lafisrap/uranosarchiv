@@ -6,6 +6,7 @@ import { groupLegacyFolder } from './lib/group-pages.mjs';
 import { uploadPdf } from './lib/r2-upload.mjs';
 
 const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const MERGED_ROOT = 'legacy/_merged';
 
 function parseArgs(argv) {
   const args = { upload: false, force: false, regenerate: false };
@@ -62,14 +63,14 @@ function stripUndefined(obj) {
  * looking strings like "090410" unquoted, and Astro's content-collection
  * YAML parser then reads that back as the *number* 90410 (leading zero
  * dropped), failing the zod schema's `dateRaw: z.string()` check. Explicit
- * JSON.stringify() on every string value forces double-quotes, which is
- * always unambiguous YAML, so this class of round-trip bug can't recur.
+ * JSON.stringify() on every string/array value forces unambiguous YAML.
  */
 function toFrontmatter(data) {
   const lines = ['---'];
   for (const [key, value] of Object.entries(data)) {
     if (value === null) lines.push(`${key}: null`);
     else if (typeof value === 'string') lines.push(`${key}: ${JSON.stringify(value)}`);
+    else if (Array.isArray(value)) lines.push(`${key}: ${JSON.stringify(value)}`);
     else lines.push(`${key}: ${value}`);
   }
   lines.push('---', '');
@@ -95,6 +96,16 @@ async function main() {
     throw new Error('R2_BUCKET_NAME is not set — add it to .env (see .env.example).');
   }
 
+  const mergedDir = join(REPO_ROOT, MERGED_ROOT, args.categorySlug);
+  const pageCountsPath = join(mergedDir, '_page-counts.json');
+  if (!(await fileExists(pageCountsPath))) {
+    throw new Error(
+      `No merged PDFs found for "${args.categorySlug}" (expected ${mergedDir}/_page-counts.json). ` +
+        `Run scripts/merge-legacy-pdfs.mjs --legacy-dir "${args.legacyDir}" --category-slug ${args.categorySlug} first.`,
+    );
+  }
+  const pageCounts = JSON.parse(await readFile(pageCountsPath, 'utf-8'));
+
   console.log(`Scanning "${args.legacyDir}" for category "${args.categorySlug}"…`);
   const groups = await groupLegacyFolder(legacyDirAbs, args.legacyDir);
   console.log(`Found ${groups.length} logical document(s).`);
@@ -102,7 +113,7 @@ async function main() {
   const contentDir = join(REPO_ROOT, 'src/content/documents', args.categorySlug);
   const csvRows = [
     toCsvRow([
-      'originalFilename', 'legacyFolder', 'documentGroup', 'sequenceIndex',
+      'documentGroup', 'title', 'legacyFolder', 'sourceFileCount', 'pageCount',
       'date', 'dateSuffix', 'isVerbatim', 'r2Key', 'needsReview', 'reviewReason',
     ]),
   ];
@@ -113,63 +124,66 @@ async function main() {
   let skippedUpload = 0;
 
   for (const group of groups) {
-    const pageCount = group.pages.length;
-    for (const page of group.pages) {
-      const seqPadded = String(page.sequenceIndex).padStart(3, '0');
-      const r2Key = `${args.categorySlug}/${group.documentGroup}/${seqPadded}.pdf`;
-      const mdPath = join(contentDir, group.documentGroup, `${seqPadded}.md`);
-
-      csvRows.push(
-        toCsvRow([
-          page.originalFilename,
-          group.legacyFolder,
-          group.documentGroup,
-          page.sequenceIndex,
-          group.date ?? '',
-          group.dateSuffix ?? '',
-          page.isVerbatim,
-          r2Key,
-          group.needsReview,
-          group.reviewReason ?? '',
-        ]),
+    const pageCount = pageCounts[group.documentGroup];
+    if (pageCount === undefined) {
+      throw new Error(
+        `"${group.documentGroup}" has no entry in ${pageCountsPath} — re-run merge-legacy-pdfs.mjs for this category.`,
       );
+    }
+    const mergedPdfPath = join(mergedDir, `${group.documentGroup}.pdf`);
+    const r2Key = `${args.categorySlug}/${group.documentGroup}.pdf`;
+    const mdPath = join(contentDir, `${group.documentGroup}.md`);
 
-      const exists = await fileExists(mdPath);
-      if (exists && !args.regenerate) {
-        skippedMarkdown++;
-      } else {
-        const frontmatter = stripUndefined({
-          title: group.title,
-          documentGroup: group.documentGroup,
-          category: args.categorySlug,
-          date: group.date,
-          dateRaw: group.dateRaw,
-          dateSuffix: group.dateSuffix,
-          isUndated: group.isUndated,
-          place: group.place,
-          sequenceIndex: page.sequenceIndex,
-          pageCount,
-          isVerbatim: page.isVerbatim,
-          r2Key,
-          originalFilename: page.originalFilename,
-          legacyFolder: group.legacyFolder,
-          order: 0,
-        });
-        await mkdir(dirname(mdPath), { recursive: true });
-        await writeFile(mdPath, toFrontmatter(frontmatter), 'utf-8');
-        written++;
-      }
+    csvRows.push(
+      toCsvRow([
+        group.documentGroup,
+        group.title,
+        group.legacyFolder,
+        group.pages.length,
+        pageCount,
+        group.date ?? '',
+        group.dateSuffix ?? '',
+        group.isVerbatim,
+        r2Key,
+        group.needsReview,
+        group.reviewReason ?? '',
+      ]),
+    );
 
-      if (args.upload) {
-        const result = await uploadPdf({
-          bucket,
-          key: r2Key,
-          filePath: page.fullPath,
-          force: args.force,
-        });
-        if (result.status === 'uploaded') uploaded++;
-        else skippedUpload++;
-      }
+    const exists = await fileExists(mdPath);
+    if (exists && !args.regenerate) {
+      skippedMarkdown++;
+    } else {
+      const frontmatter = stripUndefined({
+        title: group.title,
+        documentGroup: group.documentGroup,
+        category: args.categorySlug,
+        date: group.date,
+        dateRaw: group.dateRaw,
+        dateSuffix: group.dateSuffix,
+        isUndated: group.isUndated,
+        place: group.place,
+        pageCount,
+        isVerbatim: group.isVerbatim,
+        r2Key,
+        originalFilenames: group.pages.map((p) => p.originalFilename),
+        legacyFolder: group.legacyFolder,
+        order: 0,
+      });
+      await mkdir(dirname(mdPath), { recursive: true });
+      await writeFile(mdPath, toFrontmatter(frontmatter), 'utf-8');
+      written++;
+    }
+
+    if (args.upload) {
+      const result = await uploadPdf({
+        bucket,
+        key: r2Key,
+        filePath: mergedPdfPath,
+        force: args.force,
+      });
+      if (result.status === 'uploaded') uploaded++;
+      else skippedUpload++;
     }
   }
 
@@ -184,7 +198,7 @@ Markdown: ${written} written, ${skippedMarkdown} skipped (already existed; use -
   if (args.upload) {
     console.log(`R2 upload: ${uploaded} uploaded, ${skippedUpload} skipped (already existed; use --force to overwrite).`);
   } else {
-    console.log('R2 upload: skipped (pass --upload to actually upload PDFs).');
+    console.log('R2 upload: skipped (pass --upload to actually upload the merged PDFs).');
   }
   console.log(`Report written to ${reportPath}`);
   if (needsReviewCount > 0) {

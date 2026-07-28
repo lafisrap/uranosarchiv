@@ -8,9 +8,9 @@ interface Props {
 
 const { doc } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const categoryNode = await findNavNodeBySlug(doc.category);
-const href = `${base}/dokument/${categoryNode?.path}/${doc.documentGroup}/`;
-const filterText = [doc.title, doc.date, doc.place]
+const categoryNode = await findNavNodeBySlug(doc.data.category);
+const href = `${base}/dokument/${categoryNode?.path}/${doc.data.documentGroup}/`;
+const filterText = [doc.data.title, doc.data.date, doc.data.place]
   .filter(Boolean)
   .join(' ')
   .toLowerCase();
@@ -24,26 +24,26 @@ function formatDate(iso: string | null, suffix?: string): string {
 ---
 
 <a class="document-card" href={href} data-filter-text={filterText}>
-	<h3>{doc.title}</h3>
+	<h3>{doc.data.title}</h3>
 	<dl>
 		<div>
 			<dt>Datum</dt>
-			<dd>{formatDate(doc.date, doc.dateSuffix)}</dd>
+			<dd>{formatDate(doc.data.date, doc.data.dateSuffix)}</dd>
 		</div>
 		{
-			doc.place && (
+			doc.data.place && (
 				<div>
 					<dt>Ort</dt>
-					<dd>{doc.place}</dd>
+					<dd>{doc.data.place}</dd>
 				</div>
 			)
 		}
 		<div>
 			<dt>Umfang</dt>
-			<dd>{doc.pageCount} {doc.pageCount === 1 ? 'Seite' : 'Seiten'}</dd>
+			<dd>{doc.data.pageCount} {doc.data.pageCount === 1 ? 'Seite' : 'Seiten'}</dd>
 		</div>
 	</dl>
-	{doc.isVerbatim && <span class="badge">Wortlaut</span>}
+	{doc.data.isVerbatim && <span class="badge">Wortlaut</span>}
 </a>
 
 <style>

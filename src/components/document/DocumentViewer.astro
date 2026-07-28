@@ -1,47 +1,33 @@
 ---
-import type { CollectionEntry } from 'astro:content';
-import { r2Url } from '../../lib/r2';
-
 interface Props {
-  /** Pages of ONE logical document, already sorted by sequenceIndex. */
-  pages: CollectionEntry<'documents'>[];
+  pdfUrl: string;
+  pageCount: number;
   title: string;
 }
 
-const { pages, title } = Astro.props;
-
-const pageData = pages.map((p) => ({
-  sequenceIndex: p.data.sequenceIndex,
-  url: r2Url(p.data.r2Key),
-}));
+const { pdfUrl, pageCount, title } = Astro.props;
 ---
 
-<div class="document-viewer" data-pages={JSON.stringify(pageData)} data-title={title}>
+<div class="document-viewer" data-pdf-url={pdfUrl} data-page-count={pageCount} data-title={title}>
 	<!--
-		Always-rendered, no-JS-required fallback: plain download links for every
-		page. The script below hides this once the canvas viewer is confirmed
-		working (see plans/plan.md, "PDF viewing approach").
+		Always-rendered, no-JS-required fallback: a plain download link. The
+		script below hides this once the canvas viewer is confirmed working
+		(see plans/plan.md, "PDF viewing approach").
 	-->
-	<ul class="viewer-fallback">
-		{
-			pageData.map((p) => (
-				<li>
-					<a href={p.url} target="_blank" rel="noopener">
-						Seite {p.sequenceIndex} herunterladen
-					</a>
-				</li>
-			))
-		}
-	</ul>
+	<p class="viewer-fallback">
+		<a href={pdfUrl} target="_blank" rel="noopener">
+			PDF herunterladen{pageCount > 1 ? ` (${pageCount} Seiten)` : ''}
+		</a>
+	</p>
 
 	<div class="viewer-canvas-wrap" hidden>
 		<div class="viewer-toolbar">
 			<button type="button" class="viewer-prev" aria-label="Vorherige Seite">‹</button>
-			<span class="viewer-page-indicator">Seite <span class="viewer-current">1</span> von <span class="viewer-total">{pageData.length}</span></span>
+			<span class="viewer-page-indicator">Seite <span class="viewer-current">1</span> von <span class="viewer-total">{pageCount}</span></span>
 			<button type="button" class="viewer-next" aria-label="Nächste Seite">›</button>
 			<button type="button" class="viewer-zoom-out" aria-label="Verkleinern">−</button>
 			<button type="button" class="viewer-zoom-in" aria-label="Vergrößern">+</button>
-			<a class="viewer-original" target="_blank" rel="noopener">Original öffnen</a>
+			<a class="viewer-original" href={pdfUrl} target="_blank" rel="noopener">Original öffnen</a>
 		</div>
 		<div class="viewer-canvas-scroll">
 			<canvas class="viewer-canvas"></canvas>
@@ -51,12 +37,7 @@ const pageData = pages.map((p) => ({
 
 <style>
 	.viewer-fallback {
-		list-style: none;
 		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.5rem;
 	}
 
 	.viewer-fallback a {
@@ -117,60 +98,58 @@ const pageData = pages.map((p) => ({
 
 <script>
 	import * as pdfjs from 'pdfjs-dist';
+	import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 	// The trickiest part of this component — see plans/plan.md, "PDF viewing
-	// approach", and src/pages/dev/pdf-test.astro for the isolated
-	// proof-of-concept this was validated against first.
+	// approach", and src/pages/dev/pdf-test.astro (removed after validating
+	// this) for the isolated proof-of-concept this was checked against.
 	pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 		'pdfjs-dist/build/pdf.worker.min.mjs',
 		import.meta.url,
 	).toString();
 
-	interface PageEntry {
-		sequenceIndex: number;
-		url: string;
-	}
-
 	class UranosDocumentViewer {
 		private root: HTMLElement;
-		private pages: PageEntry[];
-		private currentIndex = 0; // 0-based index into `pages`
+		private pdfUrl: string;
+		private pageCount: number;
+		private pdf?: PDFDocumentProxy;
+		private currentPage = 1; // 1-based, matches pdf.js's own page numbering
 		private scale = 1.5;
 		private canvas: HTMLCanvasElement;
 		private renderToken = 0; // guards against out-of-order async renders
 
 		constructor(root: HTMLElement) {
 			this.root = root;
-			this.pages = JSON.parse(root.dataset.pages ?? '[]');
+			this.pdfUrl = root.dataset.pdfUrl ?? '';
+			this.pageCount = Number(root.dataset.pageCount ?? '1');
 			this.canvas = root.querySelector('.viewer-canvas') as HTMLCanvasElement;
 		}
 
 		async init() {
-			if (this.pages.length === 0) return;
+			if (!this.pdfUrl) return;
 
 			const wrap = this.root.querySelector<HTMLElement>('.viewer-canvas-wrap')!;
 			const prevBtn = this.root.querySelector<HTMLButtonElement>('.viewer-prev')!;
 			const nextBtn = this.root.querySelector<HTMLButtonElement>('.viewer-next')!;
 			const zoomInBtn = this.root.querySelector<HTMLButtonElement>('.viewer-zoom-in')!;
 			const zoomOutBtn = this.root.querySelector<HTMLButtonElement>('.viewer-zoom-out')!;
-			const originalLink = this.root.querySelector<HTMLAnchorElement>('.viewer-original')!;
 
-			prevBtn.addEventListener('click', () => this.goTo(this.currentIndex - 1));
-			nextBtn.addEventListener('click', () => this.goTo(this.currentIndex + 1));
+			prevBtn.addEventListener('click', () => this.goTo(this.currentPage - 1));
+			nextBtn.addEventListener('click', () => this.goTo(this.currentPage + 1));
 			zoomInBtn.addEventListener('click', () => this.setScale(this.scale + 0.25));
 			zoomOutBtn.addEventListener('click', () => this.setScale(this.scale - 0.25));
-
 			this.attachSwipeHandling(wrap);
 
 			try {
-				await this.render(0);
-				// Only reveal the canvas viewer — and hide the plain-link
-				// fallback — once a page has actually rendered successfully.
+				// Load the PDF document ONCE — page navigation afterwards is just
+				// pdf.getPage(n), no repeat network fetches of the whole file.
+				this.pdf = await pdfjs.getDocument({ url: this.pdfUrl }).promise;
+				await this.render(1);
 				wrap.hidden = false;
 				wrap.classList.add('is-ready');
 				this.root.querySelector<HTMLElement>('.viewer-fallback')!.hidden = true;
 			} catch (err) {
-				console.error('DocumentViewer: falling back to plain links —', err);
+				console.error('DocumentViewer: falling back to plain download link —', err);
 			}
 		}
 
@@ -192,7 +171,7 @@ const pageData = pages.map((p) => ({
 					const dy = e.changedTouches[0].clientY - startY;
 					// Horizontal swipe, not a vertical scroll gesture.
 					if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-						this.goTo(this.currentIndex + (dx < 0 ? 1 : -1));
+						this.goTo(this.currentPage + (dx < 0 ? 1 : -1));
 					}
 				},
 				{ passive: true },
@@ -201,35 +180,31 @@ const pageData = pages.map((p) => ({
 
 		private setScale(next: number) {
 			this.scale = Math.min(3, Math.max(0.5, next));
-			this.render(this.currentIndex);
+			this.render(this.currentPage);
 		}
 
-		private goTo(index: number) {
-			if (index < 0 || index >= this.pages.length) return;
-			this.render(index);
+		private goTo(pageNumber: number) {
+			if (pageNumber < 1 || pageNumber > this.pageCount) return;
+			this.render(pageNumber);
 		}
 
-		private async render(index: number) {
+		private async render(pageNumber: number) {
+			if (!this.pdf) return;
 			const token = ++this.renderToken;
-			const page = this.pages[index];
-			const loadingTask = pdfjs.getDocument({ url: page.url });
-			const pdf = await loadingTask.promise;
-			const pdfPage = await pdf.getPage(1); // each R2 object is a single scanned page
+			const page = await this.pdf.getPage(pageNumber);
 			if (token !== this.renderToken) return; // a newer navigation started meanwhile
 
-			const viewport = pdfPage.getViewport({ scale: this.scale });
+			const viewport = page.getViewport({ scale: this.scale });
 			this.canvas.width = viewport.width;
 			this.canvas.height = viewport.height;
 			const context = this.canvas.getContext('2d')!;
-			await pdfPage.render({ canvasContext: context, viewport, canvas: this.canvas }).promise;
+			await page.render({ canvasContext: context, viewport, canvas: this.canvas }).promise;
 			if (token !== this.renderToken) return;
 
-			this.currentIndex = index;
-			this.root.querySelector('.viewer-current')!.textContent = String(page.sequenceIndex);
-			this.root.querySelector<HTMLButtonElement>('.viewer-prev')!.disabled = index === 0;
-			this.root.querySelector<HTMLButtonElement>('.viewer-next')!.disabled =
-				index === this.pages.length - 1;
-			this.root.querySelector<HTMLAnchorElement>('.viewer-original')!.href = page.url;
+			this.currentPage = pageNumber;
+			this.root.querySelector('.viewer-current')!.textContent = String(pageNumber);
+			this.root.querySelector<HTMLButtonElement>('.viewer-prev')!.disabled = pageNumber === 1;
+			this.root.querySelector<HTMLButtonElement>('.viewer-next')!.disabled = pageNumber === this.pageCount;
 		}
 	}
 

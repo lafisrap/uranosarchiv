@@ -2,6 +2,7 @@
 import BaseLayout from './BaseLayout.astro';
 import Breadcrumbs from '../components/nav/Breadcrumbs.astro';
 import DocumentViewer from '../components/document/DocumentViewer.astro';
+import { r2Url } from '../lib/r2';
 import type { NavNode } from '../lib/nav-tree';
 import type { LogicalDocument } from '../lib/documents';
 
@@ -20,29 +21,29 @@ function formatDate(iso: string | null, suffix?: string): string {
 }
 ---
 
-<BaseLayout title={doc.title}>
-	<Breadcrumbs trail={trail} current={doc.title} />
-	<h1>{doc.title}</h1>
+<BaseLayout title={doc.data.title}>
+	<Breadcrumbs trail={trail} current={doc.data.title} />
+	<h1>{doc.data.title}</h1>
 
 	<dl class="document-meta">
 		<div>
 			<dt>Datum</dt>
-			<dd>{formatDate(doc.date, doc.dateSuffix)}</dd>
+			<dd>{formatDate(doc.data.date, doc.data.dateSuffix)}</dd>
 		</div>
 		{
-			doc.place && (
+			doc.data.place && (
 				<div>
 					<dt>Ort</dt>
-					<dd>{doc.place}</dd>
+					<dd>{doc.data.place}</dd>
 				</div>
 			)
 		}
 		<div>
 			<dt>Umfang</dt>
-			<dd>{doc.pageCount} {doc.pageCount === 1 ? 'Seite' : 'Seiten'}</dd>
+			<dd>{doc.data.pageCount} {doc.data.pageCount === 1 ? 'Seite' : 'Seiten'}</dd>
 		</div>
 		{
-			doc.isVerbatim && (
+			doc.data.isVerbatim && (
 				<div>
 					<dt>Hinweis</dt>
 					<dd>Wortlaut-Transkription</dd>
@@ -51,7 +52,7 @@ function formatDate(iso: string | null, suffix?: string): string {
 		}
 	</dl>
 
-	<DocumentViewer pages={doc.pages} title={doc.title} />
+	<DocumentViewer pdfUrl={r2Url(doc.data.r2Key)} pageCount={doc.data.pageCount} title={doc.data.title} />
 </BaseLayout>
 
 <style>

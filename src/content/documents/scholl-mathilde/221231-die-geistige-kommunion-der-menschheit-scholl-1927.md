@@ -1,0 +1,14 @@
+---
+title: "Die geistige Kommunion der Menschheit-Scholl 1927"
+documentGroup: "221231-die-geistige-kommunion-der-menschheit-scholl-1927"
+category: "scholl-mathilde"
+date: "1922-12-31"
+dateRaw: "221231"
+isUndated: false
+pageCount: 59
+isVerbatim: false
+r2Key: "scholl-mathilde/221231-die-geistige-kommunion-der-menschheit-scholl-1927.pdf"
+originalFilenames: ["221231ff-Die geistige Kommunion der Menschheit-Scholl 1927.pdf"]
+legacyFolder: "legacy/Webpage Uranos/Scholl Mathilde"
+order: 0
+---
