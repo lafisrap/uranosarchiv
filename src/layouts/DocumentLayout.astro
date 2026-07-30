@@ -1,5 +1,5 @@
 ---
-import BaseLayout from './BaseLayout.astro';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import Breadcrumbs from '../components/nav/Breadcrumbs.astro';
 import DocumentViewer from '../components/document/DocumentViewer.astro';
 import { r2Url } from '../lib/r2';
@@ -21,9 +21,8 @@ function formatDate(iso: string | null, suffix?: string): string {
 }
 ---
 
-<BaseLayout title={doc.data.title}>
+<StarlightPage frontmatter={{ title: doc.data.title }}>
 	<Breadcrumbs trail={trail} current={doc.data.title} />
-	<h1>{doc.data.title}</h1>
 
 	<dl class="document-meta">
 		<div>
@@ -53,7 +52,7 @@ function formatDate(iso: string | null, suffix?: string): string {
 	</dl>
 
 	<DocumentViewer pdfUrl={r2Url(doc.data.r2Key)} pageCount={doc.data.pageCount} title={doc.data.title} />
-</BaseLayout>
+</StarlightPage>
 
 <style>
 	.document-meta {

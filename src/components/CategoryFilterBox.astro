@@ -34,15 +34,17 @@ const { targetSelector } = Astro.props;
 		width: 100%;
 		max-width: 24rem;
 		padding: 0.5rem 0.75rem;
-		border: 1px solid rgba(62, 96, 148, 0.4);
+		border: 1px solid var(--sl-color-hairline);
 		border-radius: 0.35rem;
 		font-size: 1rem;
+		background: var(--sl-color-bg);
+		color: var(--sl-color-text);
 	}
 
 	.filter-empty {
 		margin-top: 0.75rem;
 		font-style: italic;
-		color: var(--color-brand-blue-dark);
+		color: var(--sl-color-text-accent);
 	}
 </style>
 

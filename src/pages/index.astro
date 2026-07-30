@@ -1,16 +1,18 @@
 ---
-import BaseLayout from '../layouts/BaseLayout.astro';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import { buildNavTree } from '../lib/nav-tree';
 
 const roots = (await buildNavTree()).filter((n) => n.showInNav && n.slug !== 'startseite');
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
-<BaseLayout
-	title="Startseite"
-	description="Uranos Archiv — privates und freies Rudolf-Steiner-Archiv, Nachlässe von Pionieren der Anthroposophie."
+<StarlightPage
+	frontmatter={{
+		title: 'Willkommen',
+		description:
+			'Uranos Archiv — privates und freies Rudolf-Steiner-Archiv, Nachlässe von Pionieren der Anthroposophie.',
+	}}
 >
-	<h1>Willkommen</h1>
 	<p class="lede">Das Uranos Archiv ist ein privates und freies Rudolf Steiner Archiv.</p>
 	<p class="lede">Nachlässe von Pionieren der Anthroposophie finden sich hier wieder.</p>
 	<p class="lede">Der Archivzugang wird jedem gewährt.</p>
@@ -30,7 +32,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 			}
 		</div>
 	</section>
-</BaseLayout>
+</StarlightPage>
 
 <style>
 	.lede {
@@ -50,27 +52,26 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 	.category-tile {
 		display: block;
 		padding: 1.25rem;
-		border: 1px solid rgba(62, 96, 148, 0.25);
+		border: 1px solid var(--sl-color-hairline);
 		border-radius: 0.5rem;
-		background: white;
+		background: var(--sl-color-bg-nav);
 		text-decoration: none;
-		color: var(--color-ink);
+		color: var(--sl-color-text);
 		transition: border-color 0.15s ease, box-shadow 0.15s ease;
 	}
 
 	.category-tile:hover {
-		border-color: var(--color-accent-orange);
+		border-color: var(--sl-color-accent);
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 	}
 
 	.category-tile h3 {
 		margin: 0 0 0.25rem;
-		font-family: var(--font-display);
 	}
 
 	.category-tile p {
 		margin: 0;
 		font-size: 0.85rem;
-		color: var(--color-brand-blue-dark);
+		color: var(--sl-color-text-accent);
 	}
 </style>

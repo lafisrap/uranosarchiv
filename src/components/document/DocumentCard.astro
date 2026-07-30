@@ -51,23 +51,23 @@ function formatDate(iso: string | null, suffix?: string): string {
 		display: block;
 		position: relative;
 		padding: 1rem;
-		border: 1px solid rgba(62, 96, 148, 0.25);
+		border: 1px solid var(--sl-color-hairline);
 		border-radius: 0.5rem;
-		background: white;
+		background: var(--sl-color-bg-nav);
 		text-decoration: none;
-		color: var(--color-ink);
+		color: var(--sl-color-text);
 		transition: border-color 0.15s ease, box-shadow 0.15s ease;
 	}
 
 	.document-card:hover {
-		border-color: var(--color-accent-orange);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+		border-color: var(--sl-color-accent);
+		box-shadow: var(--sl-shadow-sm);
 	}
 
 	.document-card h3 {
 		margin: 0 0 0.5rem;
 		font-size: 1.05rem;
-		font-family: var(--font-display);
+		font-family: 'Georgia', 'Iowan Old Style', serif;
 	}
 
 	.document-card dl {
@@ -99,8 +99,8 @@ function formatDate(iso: string | null, suffix?: string): string {
 		font-size: 0.7rem;
 		text-transform: uppercase;
 		letter-spacing: 0.03em;
-		background: var(--color-brand-blue);
-		color: white;
+		background: var(--sl-color-accent);
+		color: var(--sl-color-text-invert);
 		padding: 0.15rem 0.5rem;
 		border-radius: 999px;
 	}

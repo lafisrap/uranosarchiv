@@ -1,5 +1,7 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { docsLoader } from '@astrojs/starlight/loaders';
+import { docsSchema } from '@astrojs/starlight/schema';
 
 const categories = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/categories' }),
@@ -40,4 +42,10 @@ const documents = defineCollection({
   }),
 });
 
-export const collections = { categories, documents };
+// Required by the Starlight integration itself — kept intentionally empty
+// (no files in src/content/docs/). All real content lives in `categories`
+// and `documents` above; Starlight only supplies the visual shell via
+// <StarlightPage> and our own Sidebar override (see plans/plan.md).
+const docs = defineCollection({ loader: docsLoader(), schema: docsSchema() });
+
+export const collections = { categories, documents, docs };

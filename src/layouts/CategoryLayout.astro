@@ -1,5 +1,5 @@
 ---
-import BaseLayout from './BaseLayout.astro';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
 import Breadcrumbs from '../components/nav/Breadcrumbs.astro';
 import DocumentCard from '../components/document/DocumentCard.astro';
 import CategoryFilterBox from '../components/CategoryFilterBox.astro';
@@ -16,9 +16,8 @@ const { node, trail, documents } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 
-<BaseLayout title={node.title}>
+<StarlightPage frontmatter={{ title: node.title }}>
 	<Breadcrumbs trail={trail} />
-	<h1>{node.title}</h1>
 
 	{
 		node.children.length > 0 && (
@@ -58,7 +57,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 			)
 		)
 	}
-</BaseLayout>
+</StarlightPage>
 
 <style>
 	.subcategories ul {
@@ -73,7 +72,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 	.subcategories a {
 		display: inline-block;
 		padding: 0.5rem 1rem;
-		border: 1px solid var(--color-brand-blue);
+		border: 1px solid var(--sl-color-accent);
 		border-radius: 999px;
 		text-decoration: none;
 		font-weight: 600;
@@ -87,6 +86,6 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 
 	.empty-notice {
 		font-style: italic;
-		color: var(--color-brand-blue-dark);
+		color: var(--sl-color-text-accent);
 	}
 </style>

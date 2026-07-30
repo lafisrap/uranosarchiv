@@ -1,0 +1,42 @@
+---
+// Overrides Starlight's default Footer (which is mostly empty for us — we
+// don't set editUrl/lastUpdated) to keep our own site tagline + Impressum
+// link, while still reusing Starlight's built-in Pagination (prev/next
+// through the sidebar order — a reasonable free bonus for browsing a
+// document archive sequentially).
+import Pagination from 'virtual:starlight/components/Pagination';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const year = new Date().getFullYear();
+---
+
+<footer class="sl-flex">
+	<Pagination />
+	<div class="uranos-footer-meta">
+		<p>
+			Uranos Archiv — Privates und freies Rudolf-Steiner-Archiv. Nachlässe von Pionieren der
+			Anthroposophie.
+		</p>
+		<p>
+			<a href={`${base}/impressum/`}>Impressum</a>
+			· © {year}
+		</p>
+	</div>
+</footer>
+
+<style>
+	footer {
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+
+	.uranos-footer-meta {
+		margin-top: 1.5rem;
+		font-size: var(--sl-text-sm);
+		color: var(--sl-color-gray-3);
+	}
+
+	.uranos-footer-meta p {
+		margin: 0.25rem 0;
+	}
+</style>

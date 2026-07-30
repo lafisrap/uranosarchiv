@@ -1,0 +1,59 @@
+/*
+  Re-maps Starlight's semantic color variables onto the palette sampled from
+  the recovered original watercolor artwork (see src/styles/global.css for
+  the raw values / provenance). Starlight's own props.css defines `:root` as
+  the DARK theme and overrides specific vars under `:root[data-theme='light']`
+  — this file follows the same structure so both modes stay themed, not just
+  the default one.
+*/
+@layer starlight.base {
+  :root {
+    /* Dark mode: keep Starlight's neutral dark grays, retint the accent to
+       our brand blue and warm the page background very slightly. */
+    --sl-color-accent-low: #1a2c42;
+    --sl-color-accent: #6f97c9;
+    --sl-color-accent-high: #cfe0f2;
+    --sl-color-bg: #16181c;
+    --sl-color-bg-nav: #1c1f24;
+    --sl-color-bg-sidebar: #1c1f24;
+  }
+
+  :root[data-theme='light'] {
+    /* Light mode: the actual "watercolor" identity — warm cream page, deep
+       blue accent (sampled from the recovered artwork), ink text. */
+    --sl-color-accent-low: #dce6f1;
+    --sl-color-accent: #3e6094;
+    --sl-color-accent-high: #1f3a5c;
+    --sl-color-text: #241f14;
+    --sl-color-text-accent: #3e6094;
+    --sl-color-bg: #faf7ee;
+    --sl-color-bg-nav: #fbf9f2;
+    --sl-color-bg-sidebar: #fbf9f2;
+    --sl-color-hairline-light: #e6ddc6;
+    --sl-color-hairline: #ece4d0;
+    --sl-color-hairline-shade: #ddd2b3;
+  }
+
+}
+
+/*
+  Headings echo the original site's serif display face; body text, nav, and
+  buttons deliberately stay on Starlight's default system sans (readable at
+  archive scale — 1000+ documents, lots of dense metadata) — so this is a
+  plain font-family override on headings only, NOT a change to `--sl-font`
+  (which would apply the serif everywhere).
+*/
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.site-title {
+  font-family: 'Georgia', 'Iowan Old Style', serif;
+}
+
+.site-title {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}

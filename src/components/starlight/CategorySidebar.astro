@@ -1,0 +1,73 @@
+---
+// Overrides Starlight's default Sidebar (see astro.config.mjs's
+// `starlight({ components: { Sidebar: ... } })`) to render OUR OWN category
+// tree instead of Starlight's docs-collection autogeneration — our
+// categories/documents aren't part of Starlight's `docs` collection, so its
+// built-in sidebar generation has no way to know about them regardless.
+//
+// This is what keeps the "add a category markdown file -> it shows up in
+// nav automatically" workflow working exactly as it did before Starlight
+// (see plans/plan.md): buildNavTree() is unchanged, we just convert its
+// output into Starlight's own SidebarEntry shape and hand it to Starlight's
+// own SidebarSublist component, so the visual style/interaction (collapsible
+// groups, current-page highlighting, mobile footer) is all Starlight's,
+// not reimplemented by hand.
+import SidebarPersister from '@astrojs/starlight/components/SidebarPersister.astro';
+import SidebarSublist from '@astrojs/starlight/components/SidebarSublist.astro';
+import MobileMenuFooter from 'virtual:starlight/components/MobileMenuFooter';
+import { buildNavTree, type NavNode } from '../../lib/nav-tree';
+
+interface SidebarLinkEntry {
+  type: 'link';
+  label: string;
+  href: string;
+  isCurrent: boolean;
+  badge: undefined;
+  attrs: Record<string, string>;
+}
+interface SidebarGroupEntry {
+  type: 'group';
+  label: string;
+  entries: (SidebarLinkEntry | SidebarGroupEntry)[];
+  collapsed: boolean;
+  badge: undefined;
+}
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const currentPath = Astro.url.pathname.replace(base, '').replace(/^\/|\/$/g, '');
+
+function toLink(node: NavNode): SidebarLinkEntry {
+  return {
+    type: 'link',
+    label: node.navLabel,
+    href: `${base}/${node.path}/`,
+    isCurrent: currentPath === node.path,
+    badge: undefined,
+    attrs: {},
+  };
+}
+
+function toEntry(node: NavNode): SidebarLinkEntry | SidebarGroupEntry {
+  if (node.children.length === 0) return toLink(node);
+  return {
+    type: 'group',
+    label: node.navLabel,
+    // Prepend a link to the category's own page so it stays reachable even
+    // once it also has a sub-nav group.
+    entries: [toLink(node), ...node.children.filter((c) => c.showInNav).map(toEntry)],
+    collapsed: !currentPath.startsWith(node.path),
+    badge: undefined,
+  };
+}
+
+const roots = await buildNavTree();
+const sidebar = roots.filter((n) => n.showInNav).map(toEntry);
+---
+
+<SidebarPersister>
+	<SidebarSublist sublist={sidebar} />
+</SidebarPersister>
+
+<div class="md:sl-hidden">
+	<MobileMenuFooter />
+</div>

@@ -43,7 +43,7 @@ const { pdfUrl, pageCount, title } = Astro.props;
 	.viewer-fallback a {
 		display: inline-block;
 		padding: 0.4rem 0.75rem;
-		border: 1px solid var(--color-brand-blue);
+		border: 1px solid var(--sl-color-accent);
 		border-radius: 0.35rem;
 		text-decoration: none;
 	}
@@ -64,8 +64,9 @@ const { pdfUrl, pageCount, title } = Astro.props;
 	.viewer-toolbar button {
 		min-width: 2.25rem;
 		min-height: 2.25rem;
-		border: 1px solid var(--color-brand-blue);
-		background: white;
+		border: 1px solid var(--sl-color-accent);
+		background: var(--sl-color-bg-nav);
+		color: var(--sl-color-text);
 		border-radius: 0.35rem;
 		font-size: 1.1rem;
 		cursor: pointer;
@@ -85,7 +86,11 @@ const { pdfUrl, pageCount, title } = Astro.props;
 	.viewer-canvas-scroll {
 		overflow: auto;
 		max-height: 80vh;
-		border: 1px solid rgba(62, 96, 148, 0.25);
+		border: 1px solid var(--sl-color-hairline);
+		/* Deliberately a fixed neutral light gray, not tied to the site's
+		   dark/light theme — scanned pages are inherently light paper, and a
+		   dark backdrop around them would look like a rendering error rather
+		   than a themed choice. */
 		background: #f4f4f2;
 		touch-action: pan-x pan-y pinch-zoom;
 	}
