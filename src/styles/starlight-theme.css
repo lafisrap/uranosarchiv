@@ -1,10 +1,11 @@
 /*
   Re-maps Starlight's semantic color variables onto the palette sampled from
-  the recovered original watercolor artwork (see src/styles/global.css for
-  the raw values / provenance). Starlight's own props.css defines `:root` as
-  the DARK theme and overrides specific vars under `:root[data-theme='light']`
-  — this file follows the same structure so both modes stay themed, not just
-  the default one.
+  the recovered original watercolor artwork (reference/design-assets/). Also
+  restores an actual banner from that artwork behind the site header — see
+  the `.header` rule below — rather than only the small circular logo.
+  Starlight's own props.css defines `:root` as the DARK theme and overrides
+  specific vars under `:root[data-theme='light']` — this file follows the
+  same structure so both modes stay themed, not just the default one.
 */
 @layer starlight.base {
   :root {
@@ -56,4 +57,41 @@ h6,
 .site-title {
   font-weight: 700;
   letter-spacing: 0.01em;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.7);
+}
+
+:root[data-theme='light'] .site-title {
+  color: #241f14;
+}
+
+/*
+  A real banner, not just the small circular logo: a wider, text-free strip
+  cropped from the same recovered watercolor artwork as the logo (see
+  reference/design-assets/bg_page1_final-version.jpg — this is the clean
+  gap between where "ÜBER UNS" and "URANOS ARCHIV" were painted on the
+  original, found by re-inspecting the source image). Raised `--sl-nav-height`
+  to give the strip room to read as a banner rather than a sliver; Starlight
+  documents this variable as themeable, so this is a supported customization,
+  not a layout hack.
+*/
+/* Mobile keeps Starlight's default nav height (raising it caused the site
+   title to clip against the search/menu icons at narrow widths) — the
+   banner still shows, just as a thinner strip there. Only widen it on
+   desktop, where there's room for the title to sit comfortably inside a
+   taller strip. */
+@media (min-width: 50rem) {
+  :root {
+    --sl-nav-height: 5.5rem;
+  }
+}
+
+.header {
+  background-image: url('../assets/hero/header-banner.jpg');
+  background-size: cover;
+  background-position: center;
+}
+
+:root[data-theme='dark'] .header {
+  background-image: linear-gradient(rgba(10, 12, 16, 0.55), rgba(10, 12, 16, 0.55)),
+    url('../assets/hero/header-banner.jpg');
 }
