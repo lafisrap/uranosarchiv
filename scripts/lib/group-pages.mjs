@@ -42,7 +42,18 @@ export async function groupLegacyFolder(legacyDir, legacyFolderLabel, options = 
   const entries = await readdir(legacyDir, { withFileTypes: true });
   const groups = [];
 
-  const notExcluded = (name) => !excludeNames || !excludeNames.has(name);
+  // Normalize both sides before comparing: macOS/APFS readdir() returns
+  // filenames in NFD (decomposed) form, e.g. "ü" as "u" + combining
+  // diaeresis, while a name typed into categories.json is normally NFC
+  // (precomposed) — visually identical but a different byte sequence, so a
+  // raw Set.has() silently fails to exclude any name containing an umlaut.
+  // Found via Phase 2's Albert Soesman fix: "Bücher", "Unveröffentliches",
+  // and "Bio-dyn. Präparat" all slipped through an --exclude list that
+  // listed them correctly.
+  const normalizedExcludes = excludeNames
+    ? new Set([...excludeNames].map((n) => n.normalize('NFC')))
+    : null;
+  const notExcluded = (name) => !normalizedExcludes || !normalizedExcludes.has(name.normalize('NFC'));
   const subfolders = entries.filter((e) => e.isDirectory() && notExcluded(e.name));
   const looseFiles = entries.filter(
     (e) =>

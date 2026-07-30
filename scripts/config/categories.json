@@ -10,6 +10,32 @@
     "note": "Pilot category, already migrated — included for idempotent re-runs."
   },
   {
+    "legacyDir": "legacy/Webpage Uranos",
+    "categorySlug": "albert-soesman",
+    "exclude": [
+      "Arbeit Nicole",
+      "Bio-dyn. Präparat",
+      "Briefe Fotos",
+      "Bücher",
+      "E.S",
+      "E.S 1",
+      "F.M",
+      "Handgeschriebenes",
+      "Keyserlingk Notizen",
+      "Klartext",
+      "Manuskript",
+      "Mitteilungen",
+      "Scholl Mathilde",
+      "Schreibmaschin1",
+      "Schreibmaschinen",
+      "Typoskript",
+      "Typoskript1",
+      "Unveröffentliches",
+      "West-Ost"
+    ],
+    "note": "6 loose files sit directly at the archive root (not in any subfolder), missed by every other entry above since each points at a specific subfolder. Excludes every other top-level subfolder so only 'Foto Dornach Soesman001-002.pdf', 'Postkarte Dornach Soesman001-003.pdf', and 'Steiner's Kosmogonie001.pdf' remain — all identified as Albert Soesman's Nachlass by inspecting the page images (Dornach building photos/postcard, handwritten cosmogony diagram)."
+  },
+  {
     "legacyDir": "legacy/Webpage Uranos/E.S",
     "categorySlug": "seltenes-esoterische-stunden"
   },

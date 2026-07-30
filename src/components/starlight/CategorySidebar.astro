@@ -36,12 +36,22 @@ interface SidebarGroupEntry {
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const currentPath = Astro.url.pathname.replace(base, '').replace(/^\/|\/$/g, '');
 
+// "startseite" has no page of its own at /startseite/ — like index.astro
+// and [...categoryPath].astro (see that file's EXCLUDED_SLUGS), it's
+// covered by src/pages/index.astro at "/" instead. Without this, the
+// sidebar linked to a path getStaticPaths() deliberately never builds,
+// a 404 in production.
+function hrefFor(node: NavNode): string {
+  if (node.slug === 'startseite') return `${base}/`;
+  return `${base}/${node.path}/`;
+}
+
 function toLink(node: NavNode): SidebarLinkEntry {
   return {
     type: 'link',
     label: node.navLabel,
-    href: `${base}/${node.path}/`,
-    isCurrent: currentPath === node.path,
+    href: hrefFor(node),
+    isCurrent: currentPath === node.path || (node.slug === 'startseite' && currentPath === ''),
     badge: undefined,
     attrs: {},
   };
