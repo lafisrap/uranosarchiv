@@ -9,7 +9,7 @@ const REPO_ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const MERGED_ROOT = 'legacy/_merged';
 
 function parseArgs(argv) {
-  const args = { upload: false, force: false, regenerate: false };
+  const args = { upload: false, force: false, regenerate: false, excludeNames: new Set() };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--legacy-dir') args.legacyDir = argv[++i];
@@ -17,10 +17,14 @@ function parseArgs(argv) {
     else if (arg === '--upload') args.upload = true;
     else if (arg === '--force') args.force = true;
     else if (arg === '--regenerate') args.regenerate = true;
+    else if (arg === '--exclude') args.excludeNames.add(argv[++i]);
+    else if (arg === '--include-pattern') args.includePattern = new RegExp(argv[++i]);
     else throw new Error(`Unknown argument: ${arg}`);
   }
   if (!args.legacyDir || !args.categorySlug) {
-    throw new Error('Usage: migrate-category.mjs --legacy-dir <path> --category-slug <slug> [--upload] [--force] [--regenerate]');
+    throw new Error(
+      'Usage: migrate-category.mjs --legacy-dir <path> --category-slug <slug> [--upload] [--force] [--regenerate] [--exclude <name>]... [--include-pattern <regex>]',
+    );
   }
   return args;
 }
@@ -107,7 +111,10 @@ async function main() {
   const pageCounts = JSON.parse(await readFile(pageCountsPath, 'utf-8'));
 
   console.log(`Scanning "${args.legacyDir}" for category "${args.categorySlug}"…`);
-  const groups = await groupLegacyFolder(legacyDirAbs, args.legacyDir);
+  const groups = await groupLegacyFolder(legacyDirAbs, args.legacyDir, {
+    excludeNames: args.excludeNames,
+    includePattern: args.includePattern,
+  });
   console.log(`Found ${groups.length} logical document(s).`);
 
   const contentDir = join(REPO_ROOT, 'src/content/documents', args.categorySlug);

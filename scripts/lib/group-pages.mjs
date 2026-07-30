@@ -22,13 +22,35 @@ function isPdfLike(filename) {
  *   - loose file -> grouped with siblings sharing the same stem (before the
  *                   trailing 3-digit run); ungrouped stems become
  *                   standalone one-page documents.
+ *
+ * `options.excludeNames` skips specific direct children (subfolder OR loose
+ * file names) entirely — found necessary for Phase 2: some legacy folders
+ * (e.g. Typoskript1/) contain subfolders that are exact-duplicate copies of
+ * other top-level folders (Typoskript1/FM == F.M/), or individual loose
+ * files that duplicate content filed elsewhere (see plans/plan.md, "Phase 2
+ * data-quality resolution" for the specific cases found).
+ *
+ * `options.includePattern`, if given, restricts LOOSE top-level files (not
+ * subfolders) to only those whose filename matches — used to split one
+ * legacy folder's mixed content across multiple categories (e.g. "Briefe
+ * Fotos/" contains letters, circulars, postcards, and telegrams that the
+ * original site filed under different Historische Dokumente sub-categories;
+ * this lets the migration run once per sub-category with a matching regex).
  */
-export async function groupLegacyFolder(legacyDir, legacyFolderLabel) {
+export async function groupLegacyFolder(legacyDir, legacyFolderLabel, options = {}) {
+  const { excludeNames, includePattern } = options;
   const entries = await readdir(legacyDir, { withFileTypes: true });
   const groups = [];
 
-  const subfolders = entries.filter((e) => e.isDirectory());
-  const looseFiles = entries.filter((e) => e.isFile() && isPdfLike(e.name));
+  const notExcluded = (name) => !excludeNames || !excludeNames.has(name);
+  const subfolders = entries.filter((e) => e.isDirectory() && notExcluded(e.name));
+  const looseFiles = entries.filter(
+    (e) =>
+      e.isFile() &&
+      isPdfLike(e.name) &&
+      notExcluded(e.name) &&
+      (!includePattern || includePattern.test(e.name)),
+  );
 
   for (const dir of subfolders) {
     const dirPath = join(legacyDir, dir.name);

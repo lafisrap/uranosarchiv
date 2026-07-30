@@ -29,13 +29,15 @@ async function resolveSourcePath(fullPath) {
 }
 
 function parseArgs(argv) {
-  const args = { force: false };
+  const args = { force: false, excludeNames: new Set() };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--legacy-dir') args.legacyDir = argv[++i];
     else if (arg === '--category-slug') args.categorySlug = argv[++i];
     else if (arg === '--legacy-root') args.legacyRoot = argv[++i];
     else if (arg === '--force') args.force = true;
+    else if (arg === '--exclude') args.excludeNames.add(argv[++i]);
+    else if (arg === '--include-pattern') args.includePattern = new RegExp(argv[++i]);
     else throw new Error(`Unknown argument: ${arg}`);
   }
   if (args.legacyDir && !args.categorySlug) {
@@ -111,8 +113,8 @@ async function mergeGroup(group, outputDir, force) {
   return { documentGroup: group.documentGroup, status: 'merged', pageCount: merged.getPageCount() };
 }
 
-async function processCategory(legacyDirAbs, legacyFolderLabel, categorySlug, force) {
-  const groups = await groupLegacyFolder(legacyDirAbs, legacyFolderLabel);
+async function processCategory(legacyDirAbs, legacyFolderLabel, categorySlug, force, groupOptions = {}) {
+  const groups = await groupLegacyFolder(legacyDirAbs, legacyFolderLabel, groupOptions);
   const outputDir = join(REPO_ROOT, MERGED_ROOT, categorySlug);
 
   const results = [];
@@ -148,7 +150,10 @@ async function main() {
 
   if (args.legacyDir) {
     console.log(`Merging "${args.legacyDir}" -> category "${args.categorySlug}"…`);
-    await processCategory(join(REPO_ROOT, args.legacyDir), args.legacyDir, args.categorySlug, args.force);
+    await processCategory(join(REPO_ROOT, args.legacyDir), args.legacyDir, args.categorySlug, args.force, {
+      excludeNames: args.excludeNames,
+      includePattern: args.includePattern,
+    });
     return;
   }
 

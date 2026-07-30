@@ -1,0 +1,108 @@
+[
+  {
+    "legacyDir": "legacy/Webpage Uranos/Scholl Mathilde",
+    "categorySlug": "scholl-mathilde",
+    "note": "Pilot category, already migrated — included for idempotent re-runs."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Keyserlingk Notizen",
+    "categorySlug": "keyserlingk",
+    "note": "Pilot category, already migrated — included for idempotent re-runs."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/E.S",
+    "categorySlug": "seltenes-esoterische-stunden"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/E.S 1",
+    "categorySlug": "seltenes-esoterische-stunden",
+    "note": "Merged into the same category as E.S/ — no filename overlap, not a duplicate."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Klartext",
+    "categorySlug": "vortraege-klartext"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Unveröffentliches",
+    "categorySlug": "vortraege-unveroeffentlicht",
+    "note": "Includes Unveröffentliches/Europäisches — the same 34-page work also lives under Typoskript/Europäisches; an apparently intentional dual-listing in the original archive (unpublished + typewritten-format), kept as-is in both categories."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Typoskript",
+    "categorySlug": "vortraege-typoskripte"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Typoskript1",
+    "categorySlug": "vortraege-typoskripte",
+    "exclude": [
+      "FM",
+      "Handgeschriebene",
+      "Manuskript",
+      "070422 Apokalypse Kinkel Alice 1.pdf",
+      "070501 Apokalypse Kinkel Alice 2.pdf",
+      "070508 Apokalypse Kinkel Alice 3.pdf",
+      "070515 Apokalypse Kinkel Alice 4.pdf"
+    ],
+    "note": "FM/ and Manuskript/ subfolders are byte-for-byte duplicates of top-level F.M/ and Manuskript/ (confirmed via diff); Handgeschriebene/ subfolder is empty; the 4 excluded loose files duplicate Handgeschriebenes/'s 'Apokalypse Kinkel Alice 1-4'. Remaining ~58 loose files are unique content, merged into the same category as Typoskript/."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Schreibmaschinen",
+    "categorySlug": "vortraege-maschinengeschrieben"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Schreibmaschin1",
+    "categorySlug": "vortraege-maschinengeschrieben",
+    "note": "Merged into the same category as Schreibmaschinen/ — confirmed non-overlapping date ranges (Schreibmaschinen ~1903-1913, Schreibmaschin1 ~1921-1924), not a duplicate."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Handgeschriebenes",
+    "categorySlug": "vortraege-handgeschrieben"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Manuskript",
+    "categorySlug": "vortraege-manuskripte"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/F.M",
+    "categorySlug": "unbekannt",
+    "note": "No matching category in the recovered original site nav (initials-named collection, likely a person or transcriber). User decision: file under Nachlässe -> Unbekannt."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Bio-dyn. Präparat",
+    "categorySlug": "seltenes-landwirtschaft"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Bücher",
+    "categorySlug": "seltenes-buecher"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/West-Ost",
+    "categorySlug": "vortraege-typoskripte",
+    "note": "No matching category in the recovered original site nav. User decision: merge into Vorträge -> Typoskripte as the most generic fit."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Mitteilungen",
+    "categorySlug": "seltenes-waldorf-paedagogik",
+    "note": "Waldorf-school + 'Jugend' circulars, 1929-1937. User decision: file under Seltenes -> Waldorf-Pädagogik."
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Briefe Fotos",
+    "categorySlug": "historische-postkarten",
+    "includePattern": "^Postkarte"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Briefe Fotos",
+    "categorySlug": "historische-telegramme",
+    "includePattern": "^Telegramm"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Briefe Fotos",
+    "categorySlug": "historische-briefe",
+    "includePattern": "^(Brief|Rundbrief|Sonder-Rundbrief|Bericht|Notiz)"
+  },
+  {
+    "legacyDir": "legacy/Webpage Uranos/Briefe Fotos",
+    "categorySlug": "historische-fotos",
+    "includePattern": "^Steiner auf Kodak"
+  }
+]
