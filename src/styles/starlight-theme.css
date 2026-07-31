@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Averia+Libre:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Averia+Libre:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 /*
   Re-maps Starlight's semantic color variables onto the palette sampled from
@@ -37,18 +37,33 @@
     --sl-color-hairline-shade: #ddd2b3;
   }
 
+  :root {
+    /* Sitewide default body font — was deliberately left on Starlight's
+       system sans (see the removed comment this replaced) for density at
+       archive scale, but the user explicitly asked for Lora everywhere
+       that isn't a heading/breadcrumb/lede, overriding that call. This is
+       Starlight's documented override point: --sl-font composes into
+       --__sl-font, which reset.css applies on `body`, so this alone covers
+       every remaining selector (document metadata, filter box, footer,
+       Starlight's own search/TOC chrome) without hand-listing each one. */
+    --sl-font: 'Lora', Georgia, serif;
+  }
+
 }
 
 /*
-  Headings and category labels use the recovered site's display face
-  (Averia Libre, a hand-drawn serif that echoes the watercolor identity);
-  body text and buttons deliberately stay on Starlight's default system
-  sans (readable at archive scale — 1000+ documents, lots of dense
-  metadata) — so this is a font-family override on specific selectors only,
-  NOT a change to `--sl-font` (which would apply it everywhere).
+  Three-tier typography:
+  - Averia Libre (hand-drawn serif, echoes the watercolor identity):
+    headings, category labels (sidebar nav tree + the "Unterkategorien"
+    pill links on a category page), and breadcrumbs.
+  - Cormorant Garamond: the homepage's explanatory intro paragraphs (.lede)
+    only.
+  - Lora: everything else, sitewide default — see the `--sl-font` override
+    above.
   Category labels = the sidebar nav tree (#starlight__sidebar, our own
-  CategorySidebar.astro override) and the homepage's category tiles
-  (already <h3>, covered by the heading selector below).
+  CategorySidebar.astro override), the homepage's category tiles (already
+  <h3>, covered by the heading selector below), and CategoryLayout.astro's
+  `.subcategories` pill links.
 */
 h1,
 h2,
@@ -58,8 +73,14 @@ h5,
 h6,
 .site-title,
 #starlight__sidebar a,
-#starlight__sidebar .group-label {
+#starlight__sidebar .group-label,
+.subcategories a,
+.breadcrumbs {
   font-family: 'Averia Libre', 'Georgia', 'Iowan Old Style', serif;
+}
+
+.lede {
+  font-family: 'Cormorant Garamond', 'Georgia', serif;
 }
 
 .site-title {
