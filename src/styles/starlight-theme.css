@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Averia+Libre:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&display=swap');
+
 /*
   Re-maps Starlight's semantic color variables onto the palette sampled from
   the recovered original watercolor artwork (reference/design-assets/). Also
@@ -38,11 +40,15 @@
 }
 
 /*
-  Headings echo the original site's serif display face; body text, nav, and
-  buttons deliberately stay on Starlight's default system sans (readable at
-  archive scale — 1000+ documents, lots of dense metadata) — so this is a
-  plain font-family override on headings only, NOT a change to `--sl-font`
-  (which would apply the serif everywhere).
+  Headings and category labels use the recovered site's display face
+  (Averia Libre, a hand-drawn serif that echoes the watercolor identity);
+  body text and buttons deliberately stay on Starlight's default system
+  sans (readable at archive scale — 1000+ documents, lots of dense
+  metadata) — so this is a font-family override on specific selectors only,
+  NOT a change to `--sl-font` (which would apply it everywhere).
+  Category labels = the sidebar nav tree (#starlight__sidebar, our own
+  CategorySidebar.astro override) and the homepage's category tiles
+  (already <h3>, covered by the heading selector below).
 */
 h1,
 h2,
@@ -50,8 +56,10 @@ h3,
 h4,
 h5,
 h6,
-.site-title {
-  font-family: 'Georgia', 'Iowan Old Style', serif;
+.site-title,
+#starlight__sidebar a,
+#starlight__sidebar .group-label {
+  font-family: 'Averia Libre', 'Georgia', 'Iowan Old Style', serif;
 }
 
 .site-title {
