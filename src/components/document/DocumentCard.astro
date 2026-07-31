@@ -50,23 +50,48 @@ function formatDate(iso: string | null, suffix?: string): string {
 	.document-card {
 		display: block;
 		position: relative;
-		padding: 1rem;
+		padding: 1.35rem 1.5rem 1.35rem 1.75rem;
 		border: 1px solid var(--sl-color-hairline);
-		border-radius: 0.5rem;
+		border-left: 3px solid var(--sl-color-accent);
+		border-radius: 0.875rem;
 		background: var(--sl-color-bg-nav);
 		text-decoration: none;
 		color: var(--sl-color-text);
-		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+		/* Layered shadow — a soft wide one for ambient lift, a tighter one
+		   for contact/contour — reads as more "physical" than a single
+		   flat shadow. */
+		box-shadow:
+			0 8px 24px rgba(0, 0, 0, 0.1),
+			0 2px 6px rgba(0, 0, 0, 0.06);
+		transition:
+			box-shadow 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+			transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+			filter 0.3s ease;
 	}
 
 	.document-card:hover {
-		border-color: var(--sl-color-accent);
-		box-shadow: var(--sl-shadow-sm);
+		transform: translateY(-4px);
+		filter: brightness(1.03);
+		box-shadow:
+			0 16px 40px rgba(0, 0, 0, 0.16),
+			0 4px 10px rgba(0, 0, 0, 0.08);
+	}
+
+	:root[data-theme='dark'] .document-card {
+		box-shadow:
+			0 8px 24px rgba(0, 0, 0, 0.45),
+			0 2px 6px rgba(0, 0, 0, 0.3);
+	}
+
+	:root[data-theme='dark'] .document-card:hover {
+		box-shadow:
+			0 16px 40px rgba(0, 0, 0, 0.6),
+			0 4px 10px rgba(0, 0, 0, 0.35);
 	}
 
 	.document-card h3 {
-		margin: 0 0 0.5rem;
-		font-size: 1.05rem;
+		margin: 0 0 0.6rem;
+		font-size: 1.3rem;
 	}
 
 	.document-card dl {
@@ -74,7 +99,21 @@ function formatDate(iso: string | null, suffix?: string): string {
 		flex-wrap: wrap;
 		gap: 0.25rem 1rem;
 		margin: 0;
+		padding-top: 0.6rem;
+		border-top: 1px solid var(--sl-color-hairline);
 		font-size: 0.85rem;
+	}
+
+	/*
+	 * Starlight's own .sl-markdown-content CSS adds `margin-top` between any
+	 * two adjacent block-level siblings (its generic vertical-rhythm rule,
+	 * see node_modules/@astrojs/starlight/style/markdown.css) — these plain
+	 * <div> wrappers around each dt/dd pair match that generic selector, so
+	 * every row after the first was silently getting pushed down and out of
+	 * line with the first row. Reset it explicitly.
+	 */
+	.document-card dl > div {
+		margin: 0;
 	}
 
 	.document-card dt {
