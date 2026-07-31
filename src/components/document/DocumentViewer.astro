@@ -25,8 +25,6 @@ const { pdfUrl, pageCount, title } = Astro.props;
 			<button type="button" class="viewer-prev" aria-label="Vorherige Seite">‹</button>
 			<span class="viewer-page-indicator">Seite <span class="viewer-current">1</span> von <span class="viewer-total">{pageCount}</span></span>
 			<button type="button" class="viewer-next" aria-label="Nächste Seite">›</button>
-			<button type="button" class="viewer-zoom-out" aria-label="Verkleinern">−</button>
-			<button type="button" class="viewer-zoom-in" aria-label="Vergrößern">+</button>
 			<a class="viewer-original" href={pdfUrl} target="_blank" rel="noopener">Original öffnen</a>
 		</div>
 		<div class="viewer-canvas-scroll">
@@ -136,13 +134,9 @@ const { pdfUrl, pageCount, title } = Astro.props;
 			const wrap = this.root.querySelector<HTMLElement>('.viewer-canvas-wrap')!;
 			const prevBtn = this.root.querySelector<HTMLButtonElement>('.viewer-prev')!;
 			const nextBtn = this.root.querySelector<HTMLButtonElement>('.viewer-next')!;
-			const zoomInBtn = this.root.querySelector<HTMLButtonElement>('.viewer-zoom-in')!;
-			const zoomOutBtn = this.root.querySelector<HTMLButtonElement>('.viewer-zoom-out')!;
 
 			prevBtn.addEventListener('click', () => this.goTo(this.currentPage - 1));
 			nextBtn.addEventListener('click', () => this.goTo(this.currentPage + 1));
-			zoomInBtn.addEventListener('click', () => this.setScale(this.scale + 0.25));
-			zoomOutBtn.addEventListener('click', () => this.setScale(this.scale - 0.25));
 			this.attachSwipeHandling(wrap);
 
 			try {
@@ -181,11 +175,6 @@ const { pdfUrl, pageCount, title } = Astro.props;
 				},
 				{ passive: true },
 			);
-		}
-
-		private setScale(next: number) {
-			this.scale = Math.min(3, Math.max(0.5, next));
-			this.render(this.currentPage);
 		}
 
 		private goTo(pageNumber: number) {

@@ -42,10 +42,24 @@ const documents = defineCollection({
   }),
 });
 
+// One markdown file per news article, shown on the homepage's "Neuigkeiten"
+// section (src/pages/index.astro): date + title always visible, the
+// article's markdown body itself is the expandable full text (rendered via
+// astro:content's render(), no separate "teaser vs. body" split needed
+// beyond the short `teaser` field below).
+const news = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/news' }),
+  schema: z.object({
+    title: z.string(),
+    date: z.string(), // ISO "2026-07-31" — same convention as documents.date
+    teaser: z.string(), // one or two sentences, shown collapsed alongside date/title
+  }),
+});
+
 // Required by the Starlight integration itself — kept intentionally empty
-// (no files in src/content/docs/). All real content lives in `categories`
-// and `documents` above; Starlight only supplies the visual shell via
-// <StarlightPage> and our own Sidebar override (see plans/plan.md).
+// (no files in src/content/docs/). All real content lives in `categories`,
+// `documents`, and `news` above; Starlight only supplies the visual shell
+// via <StarlightPage> and our own Sidebar override (see plans/plan.md).
 const docs = defineCollection({ loader: docsLoader(), schema: docsSchema() });
 
-export const collections = { categories, documents, docs };
+export const collections = { categories, documents, news, docs };

@@ -55,15 +55,18 @@
   Three-tier typography:
   - Averia Libre (hand-drawn serif, echoes the watercolor identity):
     headings, category labels (sidebar nav tree + the "Unterkategorien"
-    pill links on a category page), and breadcrumbs.
+    pill links on a category page), breadcrumbs, and news article titles.
   - Cormorant Garamond: the homepage's explanatory intro paragraphs (.lede)
     only.
   - Lora: everything else, sitewide default — see the `--sl-font` override
     above.
   Category labels = the sidebar nav tree (#starlight__sidebar, our own
-  CategorySidebar.astro override), the homepage's category tiles (already
-  <h3>, covered by the heading selector below), and CategoryLayout.astro's
-  `.subcategories` pill links.
+  CategorySidebar.astro override) and CategoryLayout.astro's
+  `.subcategories` pill links. .news-title = the collapsed article titles
+  in index.astro's "Neuigkeiten" section — plain <span>, not a real
+  heading element, because HTML's <summary> content model only allows
+  phrasing content or a single heading child, not a heading mixed with the
+  date/teaser spans alongside it.
 */
 h1,
 h2,
@@ -75,7 +78,8 @@ h6,
 #starlight__sidebar a,
 #starlight__sidebar .group-label,
 .subcategories a,
-.breadcrumbs {
+.breadcrumbs,
+.news-title {
   font-family: 'Averia Libre', 'Georgia', 'Iowan Old Style', serif;
 }
 

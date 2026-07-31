@@ -1,9 +1,18 @@
 ---
 import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
-import { buildNavTree } from '../lib/nav-tree';
+import { getCollection, render } from 'astro:content';
 
-const roots = (await buildNavTree()).filter((n) => n.showInNav && n.slug !== 'startseite');
-const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const newsEntries = (await getCollection('news')).sort((a, b) =>
+	b.data.date.localeCompare(a.data.date),
+);
+const news = await Promise.all(
+	newsEntries.map(async (entry) => ({ entry, Content: (await render(entry)).Content })),
+);
+
+function formatDate(iso: string): string {
+	const [year, month, day] = iso.split('-');
+	return `${day}.${month}.${year}`;
+}
 ---
 
 <StarlightPage
@@ -17,20 +26,30 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 	<p class="lede">Nachlässe von Pionieren der Anthroposophie finden sich hier wieder.</p>
 	<p class="lede">Der Archivzugang wird jedem gewährt.</p>
 
-	<section class="top-categories">
-		<h2>Bereiche</h2>
-		<div class="category-grid">
-			{
-				roots.map((node) => (
-					<a class="category-tile" href={`${base}/${node.path}/`}>
-						<h3>{node.navLabel}</h3>
-						{node.children.length > 0 && (
-							<p>{node.children.length} Unterkategorien</p>
-						)}
-					</a>
-				))
-			}
-		</div>
+	<section class="news">
+		<h2>Neuigkeiten</h2>
+		{
+			news.length > 0 ? (
+				<ul class="news-list">
+					{news.map(({ entry, Content }) => (
+						<li>
+							<details>
+								<summary>
+									<span class="news-date">{formatDate(entry.data.date)}</span>
+									<span class="news-title">{entry.data.title}</span>
+									<span class="news-teaser">{entry.data.teaser}</span>
+								</summary>
+								<div class="news-body">
+									<Content />
+								</div>
+							</details>
+						</li>
+					))}
+				</ul>
+			) : (
+				<p class="news-empty">Aktuell keine Neuigkeiten.</p>
+			)
+		}
 	</section>
 </StarlightPage>
 
@@ -39,39 +58,64 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 		font-size: 1.175rem;
 	}
 
-	.top-categories {
+	.news {
 		margin-top: 2rem;
 	}
 
-	.category-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-		gap: 1rem;
+	.news-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
 	}
 
-	.category-tile {
-		display: block;
-		padding: 1.25rem;
+	.news-list details {
 		border: 1px solid var(--sl-color-hairline);
 		border-radius: 0.5rem;
 		background: var(--sl-color-bg-nav);
-		text-decoration: none;
-		color: var(--sl-color-text);
-		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+		padding: 1rem 1.25rem;
 	}
 
-	.category-tile:hover {
-		border-color: var(--sl-color-accent);
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	.news-list summary {
+		cursor: pointer;
+		list-style: none;
 	}
 
-	.category-tile h3 {
-		margin: 0 0 0.25rem;
+	.news-list summary::-webkit-details-marker {
+		display: none;
 	}
 
-	.category-tile p {
-		margin: 0;
+	.news-date {
+		display: block;
 		font-size: 0.85rem;
+		color: var(--sl-color-text-accent);
+	}
+
+	.news-title {
+		display: block;
+		font-size: 1.2rem;
+		margin: 0.15rem 0 0.35rem;
+	}
+
+	.news-teaser {
+		display: block;
+		color: var(--sl-color-text-accent);
+	}
+
+	.news-list details[open] .news-teaser {
+		display: none;
+	}
+
+	.news-body {
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--sl-color-hairline);
+	}
+
+	.news-empty {
+		font-style: italic;
 		color: var(--sl-color-text-accent);
 	}
 </style>
