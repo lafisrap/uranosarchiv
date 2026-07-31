@@ -69,6 +69,19 @@ function formatDate(iso: string | null, suffix?: string): string {
 			filter 0.3s ease;
 	}
 
+	/*
+	 * CategoryFilterBox.astro hides non-matching cards by setting the
+	 * `hidden` attribute. The browser's built-in `[hidden] { display: none }`
+	 * rule lives in the user-agent stylesheet, which ALWAYS loses to an
+	 * author rule of any specificity — so our own `display: block` above
+	 * silently defeated it and the filter never actually hid anything.
+	 * This author-level `[hidden]` rule has higher specificity than the
+	 * bare class rule, so it wins instead.
+	 */
+	.document-card[hidden] {
+		display: none;
+	}
+
 	.document-card:hover {
 		transform: translateY(-4px);
 		filter: brightness(1.03);
