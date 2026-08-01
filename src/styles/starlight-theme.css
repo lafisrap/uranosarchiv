@@ -1,72 +1,51 @@
 @import url('https://fonts.googleapis.com/css2?family=Averia+Libre:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 /*
-  Re-maps Starlight's semantic color variables onto the palette sampled from
-  the recovered original watercolor artwork (reference/design-assets/). Also
-  restores an actual banner from that artwork behind the site header — see
-  the `.header` rule below — rather than only the small circular logo.
-  Starlight's own props.css defines `:root` as the DARK theme and overrides
-  specific vars under `:root[data-theme='light']` — this file follows the
-  same structure so both modes stay themed, not just the default one.
+  L-rail identity: Starlight's fixed header + left sidebar form the L.
+  Horizontal arm → .header background; vertical arm → .sidebar-pane::before.
+  Production assets are text-free crops from reference/design-assets/uranos_bumerang.png
+  (src/assets/hero/watercolor-rail-*.png). Baked-in nav labels from the 2008–2017
+  bg_page*.jpg are never shipped.
 */
 @layer starlight.base {
   :root {
-    /* Dark mode: keep Starlight's neutral dark grays, retint the accent to
-       our brand blue and warm the page background very slightly. */
     --sl-color-accent-low: #1a2c42;
     --sl-color-accent: #6f97c9;
     --sl-color-accent-high: #cfe0f2;
     --sl-color-bg: #16181c;
     --sl-color-bg-nav: #1c1f24;
     --sl-color-bg-sidebar: #1c1f24;
+
+    /* Match the vertical rail asset width (300px @ 16px root). */
+    --sl-sidebar-width: 18.75rem;
+    --uranos-rail-ink: #241f14;
+    --uranos-rail-cream: #faf7ee;
   }
 
   :root[data-theme='light'] {
-    /* Light mode: the actual "watercolor" identity — warm cream page, deep
-       blue accent (sampled from the recovered artwork), ink text. */
     --sl-color-accent-low: #dce6f1;
     --sl-color-accent: #3e6094;
     --sl-color-accent-high: #1f3a5c;
     --sl-color-text: #241f14;
     --sl-color-text-accent: #3e6094;
     --sl-color-bg: #faf7ee;
-    --sl-color-bg-nav: #fbf9f2;
-    --sl-color-bg-sidebar: #fbf9f2;
+    --sl-color-bg-nav: #faf7ee;
+    --sl-color-bg-sidebar: #faf7ee;
     --sl-color-hairline-light: #e6ddc6;
     --sl-color-hairline: #ece4d0;
     --sl-color-hairline-shade: #ddd2b3;
   }
 
   :root {
-    /* Sitewide default body font — was deliberately left on Starlight's
-       system sans (see the removed comment this replaced) for density at
-       archive scale, but the user explicitly asked for Lora everywhere
-       that isn't a heading/breadcrumb/lede, overriding that call. This is
-       Starlight's documented override point: --sl-font composes into
-       --__sl-font, which reset.css applies on `body`, so this alone covers
-       every remaining selector (document metadata, filter box, footer,
-       Starlight's own search/TOC chrome) without hand-listing each one. */
     --sl-font: 'Lora', Georgia, serif;
   }
-
 }
 
 /*
-  Three-tier typography:
-  - Averia Libre (hand-drawn serif, echoes the watercolor identity):
-    headings, category labels (sidebar nav tree + the "Unterkategorien"
-    pill links on a category page), breadcrumbs, and news article titles.
-  - Cormorant Garamond: the homepage's explanatory intro paragraphs (.lede)
-    only.
-  - Lora: everything else, sitewide default — see the `--sl-font` override
-    above.
-  Category labels = the sidebar nav tree (#starlight__sidebar, our own
-  CategorySidebar.astro override) and CategoryLayout.astro's
-  `.subcategories` pill links. .news-title = the collapsed article titles
-  in index.astro's "Neuigkeiten" section — plain <span>, not a real
-  heading element, because HTML's <summary> content model only allows
-  phrasing content or a single heading child, not a heading mixed with the
-  date/teaser spans alongside it.
+  Typography:
+  - Averia Libre: headings, sidebar labels, breadcrumbs, news titles
+  - Cormorant Garamond: homepage .lede only
+  - Lora: body default via --sl-font
 */
 h1,
 h2,
@@ -89,29 +68,21 @@ h6,
 
 .site-title {
   font-weight: 700;
-  letter-spacing: 0.01em;
-  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 3px rgba(255, 255, 255, 0.65);
 }
 
 :root[data-theme='light'] .site-title {
-  color: #241f14;
+  color: var(--uranos-rail-ink);
 }
 
-/*
-  A real banner, not just the small circular logo: a wider, text-free strip
-  cropped from the same recovered watercolor artwork as the logo (see
-  reference/design-assets/bg_page1_final-version.jpg — this is the clean
-  gap between where "ÜBER UNS" and "URANOS ARCHIV" were painted on the
-  original, found by re-inspecting the source image). Raised `--sl-nav-height`
-  to give the strip room to read as a banner rather than a sliver; Starlight
-  documents this variable as themeable, so this is a supported customization,
-  not a layout hack.
-*/
-/* Mobile keeps Starlight's default nav height (raising it caused the site
-   title to clip against the search/menu icons at narrow widths) — the
-   banner still shows, just as a thinner strip there. Only widen it on
-   desktop, where there's room for the title to sit comfortably inside a
-   taller strip. */
+:root[data-theme='dark'] .site-title {
+  color: #f5f0e6;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+}
+
+/* ——— Horizontal arm (header) ——— */
 @media (min-width: 50rem) {
   :root {
     --sl-nav-height: 5.5rem;
@@ -119,12 +90,102 @@ h6,
 }
 
 .header {
-  background-image: url('../assets/hero/header-banner.jpg');
-  background-size: cover;
-  background-position: center;
+  border-bottom: none;
+  background-color: var(--sl-color-bg-nav);
+  background-image: url('../assets/hero/watercolor-rail-horizontal.png');
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: auto 140%;
 }
 
 :root[data-theme='dark'] .header {
+  background-image: linear-gradient(rgba(10, 12, 16, 0.45), rgba(10, 12, 16, 0.45)),
+    url('../assets/hero/watercolor-rail-horizontal.png');
+}
+
+/* ——— Vertical arm (sidebar / L-rail) ———
+   Art sits on ::before so we can fade it out without fading the nav links.
+   Cream pane continues below the painted height for long category trees. */
+.sidebar-pane {
+  border-inline-end: none;
+  background-color: var(--sl-color-bg-sidebar);
+  background-image: none;
+}
+
+.sidebar-pane::before {
+  content: '';
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  height: min(32rem, 100%);
+  background-image: url('../assets/hero/watercolor-rail-vertical.png');
+  background-repeat: no-repeat;
+  background-position: top left;
+  background-size: 100% auto;
+  -webkit-mask-image: linear-gradient(to bottom, black 58%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 58%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+:root[data-theme='dark'] .sidebar-pane::before {
   background-image: linear-gradient(rgba(10, 12, 16, 0.55), rgba(10, 12, 16, 0.55)),
-    url('../assets/hero/header-banner.jpg');
+    url('../assets/hero/watercolor-rail-vertical.png');
+}
+
+.sidebar-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* Nav contrast on the painted rail */
+#starlight__sidebar a,
+#starlight__sidebar .group-label {
+  color: var(--uranos-rail-ink);
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.45);
+}
+
+:root[data-theme='dark'] #starlight__sidebar a,
+:root[data-theme='dark'] #starlight__sidebar .group-label {
+  color: #f0ebe0;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+
+#starlight__sidebar a[aria-current='page'],
+#starlight__sidebar a[aria-current='true'] {
+  font-weight: 700;
+}
+
+:root[data-theme='light'] #starlight__sidebar a[aria-current='page'],
+:root[data-theme='light'] #starlight__sidebar a[aria-current='true'] {
+  color: #1f3a5c;
+}
+
+:root[data-theme='dark'] #starlight__sidebar a[aria-current='page'],
+:root[data-theme='dark'] #starlight__sidebar a[aria-current='true'] {
+  color: var(--sl-color-accent-high);
+}
+
+/* Soft paper frame for the main content (inner corner of the L) */
+@media (min-width: 50rem) {
+  :root[data-theme='light'] .main-frame {
+    box-shadow: inset 0.5rem 0.5rem 1.25rem -1rem rgba(36, 31, 20, 0.12);
+  }
+}
+
+/* ——— Mobile: compact topbar + same watercolor in the drawer ——— */
+@media (max-width: 49.99rem) {
+  .header {
+    background-size: cover;
+    background-position: center left;
+  }
+
+  .sidebar-pane::before {
+    height: 100%;
+    background-size: cover;
+    background-position: top center;
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
 }

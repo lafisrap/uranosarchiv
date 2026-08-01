@@ -14,10 +14,8 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'Uranos Archiv',
-      logo: {
-        src: './src/assets/hero/watercolor-swatch.jpg',
-        alt: '',
-      },
+      // Brand mark is the L-rail watercolor (header + sidebar backgrounds in
+      // starlight-theme.css), not a separate logo image.
       customCss: ['./src/styles/starlight-theme.css'],
       components: {
         Sidebar: './src/components/starlight/CategorySidebar.astro',

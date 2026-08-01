@@ -5,6 +5,11 @@
 // categories/documents aren't part of Starlight's `docs` collection, so its
 // built-in sidebar generation has no way to know about them regardless.
 //
+// Visually this is the vertical arm of the L-rail (watercolor background is
+// applied in starlight-theme.css on `.sidebar-pane`). On viewports under
+// 50rem Starlight collapses it into the hamburger drawer — same tree, same
+// links, no image-map hotspots.
+//
 // This is what keeps the "add a category markdown file -> it shows up in
 // nav automatically" workflow working exactly as it did before Starlight
 // (see plans/plan.md): buildNavTree() is unchanged, we just convert its
